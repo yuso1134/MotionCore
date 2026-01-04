@@ -7,8 +7,10 @@ plugins {
 
 android {
     namespace = "com.example.motioncore"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // compileSdk sürümünü 35 olarak sabitledik
+    compileSdk = 35
+    // NDK sürümünü güncelledik (hata mesajına istinaden)
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -24,8 +26,11 @@ android {
         applicationId = "com.example.motioncore"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        
+        // minSdkVersion'ı 21 olarak sabitledik
+        minSdk = 21
+        // targetSdk'i 35 olarak sabitledik
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
