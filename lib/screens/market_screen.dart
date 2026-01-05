@@ -95,7 +95,7 @@ class MarketScreen extends StatelessWidget {
                             context: context,
                             title: 'Step Multiplier x2',
                             description: 'Double energy from steps for 24h',
-                            price: 5000,
+                            price: 1, // Fiyat 1 olarak güncellendi
                             icon: Icons.speed,
                             color: Colors.blueAccent,
                             isSmallScreen: isSmallScreen,
@@ -103,7 +103,7 @@ class MarketScreen extends StatelessWidget {
                             itemId: 'step_multiplier_2x',
                             isPurchased: provider.purchasedItems.containsKey('step_multiplier_2x'),
                             onPurchase: () async {
-                              final success = await provider.purchaseMarketItem('step_multiplier_2x', 5000, durationHours: 24);
+                              final success = await provider.purchaseMarketItem('step_multiplier_2x', 1, durationHours: 24);
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -128,7 +128,7 @@ class MarketScreen extends StatelessWidget {
                             context: context,
                             title: 'Energy Bonus +50%',
                             description: 'Get 50% more energy from harvest',
-                            price: 3000,
+                            price: 1, // Fiyat 1 olarak güncellendi
                             icon: Icons.trending_up,
                             color: Colors.greenAccent,
                             isSmallScreen: isSmallScreen,
@@ -136,7 +136,7 @@ class MarketScreen extends StatelessWidget {
                             itemId: 'energy_bonus_50',
                             isPurchased: provider.purchasedItems.containsKey('energy_bonus_50'),
                             onPurchase: () async {
-                              final success = await provider.purchaseMarketItem('energy_bonus_50', 3000);
+                              final success = await provider.purchaseMarketItem('energy_bonus_50', 1);
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -173,7 +173,7 @@ class MarketScreen extends StatelessWidget {
                             context: context,
                             title: 'Neon Glow Effect',
                             description: 'Enhanced planet glow animation',
-                            price: 2000,
+                            price: 1, // Fiyat 1 olarak güncellendi
                             icon: Icons.light_mode,
                             color: Colors.purpleAccent,
                             isSmallScreen: isSmallScreen,
@@ -181,7 +181,7 @@ class MarketScreen extends StatelessWidget {
                             itemId: 'neon_glow',
                             isPurchased: provider.purchasedItems.containsKey('neon_glow'),
                             onPurchase: () async {
-                              final success = await provider.purchaseMarketItem('neon_glow', 2000);
+                              final success = await provider.purchaseMarketItem('neon_glow', 1);
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -206,7 +206,7 @@ class MarketScreen extends StatelessWidget {
                             context: context,
                             title: 'Particle Effects',
                             description: 'Add particles around planet',
-                            price: 4000,
+                            price: 1, // Fiyat 1 olarak güncellendi
                             icon: Icons.auto_awesome,
                             color: Colors.orange,
                             isSmallScreen: isSmallScreen,
@@ -214,7 +214,7 @@ class MarketScreen extends StatelessWidget {
                             itemId: 'particle_effects',
                             isPurchased: provider.purchasedItems.containsKey('particle_effects'),
                             onPurchase: () async {
-                              final success = await provider.purchaseMarketItem('particle_effects', 4000);
+                              final success = await provider.purchaseMarketItem('particle_effects', 1);
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -239,7 +239,7 @@ class MarketScreen extends StatelessWidget {
                             context: context,
                             title: 'Custom Planet Colors',
                             description: 'Unlock custom color schemes',
-                            price: 6000,
+                            price: 1, // Fiyat 1 olarak güncellendi
                             icon: Icons.palette,
                             color: Colors.pinkAccent,
                             isSmallScreen: isSmallScreen,
@@ -247,7 +247,7 @@ class MarketScreen extends StatelessWidget {
                             itemId: 'custom_colors',
                             isPurchased: provider.purchasedItems.containsKey('custom_colors'),
                             onPurchase: () async {
-                              final success = await provider.purchaseMarketItem('custom_colors', 6000);
+                              final success = await provider.purchaseMarketItem('custom_colors', 1);
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(

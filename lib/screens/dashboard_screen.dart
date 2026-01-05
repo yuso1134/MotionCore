@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui'; // BackdropFilter için
 import '../providers/motion_core_provider.dart';
 import '../models/planet_state.dart';
 import '../widgets/planet_widget.dart';
@@ -23,16 +24,84 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedNavIndex = 0;
+  PageController? _pageController;
+  int _currentViewIndex = 0;
+  bool _isInitialized = false;
+
+  static const int _milestoneStep = 500;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      try {
+        final provider = Provider.of<MotionCoreProvider>(context, listen: false);
+        final initialPage = (provider.planetState.stageNumber - 1).clamp(0, 2);
+        
+        _pageController = PageController(
+          initialPage: initialPage,
+          viewportFraction: 0.9,
+        );
+        _currentViewIndex = initialPage;
+        _isInitialized = true;
+      } catch (e) {
+        debugPrint("Error initializing PageController: $e");
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController?.dispose();
+    super.dispose();
+  }
 
   int _calculateProgressPercentage(int steps) {
-    const int milestone = 10000;
-    final progress = (steps % milestone) / milestone * 100;
+    if (_milestoneStep == 0) return 0;
+    final progress = (steps % _milestoneStep) / _milestoneStep * 100;
     return progress.toInt().clamp(0, 100);
   }
 
   int _getNextMilestone(int steps) {
-    const int milestone = 10000;
-    return ((steps ~/ milestone) + 1) * milestone;
+    return ((steps ~/ _milestoneStep) + 1) * _milestoneStep;
+  }
+
+  bool _isStageLocked(int stageIndex, int totalSteps) {
+    if (stageIndex == 0) return false;
+    if (stageIndex == 1) return totalSteps < _milestoneStep;
+    if (stageIndex == 2) return totalSteps < (_milestoneStep * 2);
+    return true;
+  }
+
+  PlanetState _getPreviewState(int pageIndex) {
+    switch (pageIndex) {
+      case 0:
+        return PlanetState(hydrosphere: 0.0, atmosphere: 0.0, biosphere: 0.0);
+      case 1:
+        return PlanetState(hydrosphere: 1.0, atmosphere: 0.5, biosphere: 0.0);
+      case 2:
+        return PlanetState(hydrosphere: 1.0, atmosphere: 1.0, biosphere: 1.0);
+      default:
+        return PlanetState();
+    }
+  }
+
+  String _getStageName(int index) {
+    switch (index) {
+      case 0: return 'DEAD ROCK';
+      case 1: return 'BLUE HOPE';
+      case 2: return 'GREEN EDEN';
+      default: return 'UNKNOWN';
+    }
+  }
+
+  String _getPhaseTitle(int index) {
+    switch (index) {
+      case 0: return 'Phase 1: Grey Rock';
+      case 1: return 'Phase 2: Blue Hope';
+      case 2: return 'Phase 3: Green Eden';
+      default: return 'Unknown Phase';
+    }
   }
 
   @override
@@ -48,16 +117,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Consumer<MotionCoreProvider>(
             builder: (context, provider, child) {
               final energy = provider.energyUnits;
-              final planet = provider.planetState;
+              final currentPlanetState = provider.planetState;
+              final int totalSteps = energy.steps;
+              final int actualStageIndex = (currentPlanetState.stageNumber - 1).clamp(0, 2);
 
               if (_selectedNavIndex != 0) {
                 return _getNavigationScreen(_selectedNavIndex);
               }
 
-              // ListView kullanarak taşma sorununu kesin çözelim
-              return ListView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 20.0),
+              if (_pageController == null) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return Column(
                 children: [
                   // ÜST KISIM (Header)
                   Container(
@@ -65,286 +137,419 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       horizontal: isSmallScreen ? 12.0 : 16.0,
                       vertical: isSmallScreen ? 8.0 : 10.0,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
                       children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.menu,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              SmoothPageRoute(
-                                builder: (context) => const TerraformingConsoleScreen(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.menu,
+                                color: Colors.white,
+                                size: 28,
                               ),
-                            );
-                          },
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  SmoothPageRoute(
+                                    builder: (context) => const TerraformingConsoleScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  // STAGE Başlığı
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 300),
+                                    child: Text(
+                                      'STAGE ${_currentViewIndex + 1}: ${_getStageName(_currentViewIndex)}',
+                                      key: ValueKey<int>(_currentViewIndex),
+                                      style: GoogleFonts.orbitron(
+                                        fontSize: isSmallScreen ? 12 : 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        letterSpacing: 1.5,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if (!_isStageLocked(_currentViewIndex, totalSteps))
+                                    Text(
+                                      '(Active / Completed)',
+                                      style: GoogleFonts.exo2(
+                                        fontSize: isSmallScreen ? 10 : 11,
+                                        color: Colors.greenAccent,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    )
+                                  else
+                                    Text(
+                                      '(Locked)',
+                                      style: GoogleFonts.exo2(
+                                        fontSize: isSmallScreen ? 10 : 11,
+                                        color: Colors.redAccent,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _isStageLocked(_currentViewIndex, totalSteps)
+                                    ? Colors.grey.shade800
+                                    : Colors.blue.shade800,
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  _isStageLocked(_currentViewIndex, totalSteps)
+                                      ? Icons.lock
+                                      : Icons.check,
+                                  size: 20,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Text(
-                                'STAGE ${planet.stageNumber}: ${planet.stageName}',
+                        
+                        if (_currentViewIndex == actualStageIndex) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: isSmallScreen ? 4.0 : 8.0),
+                              child: Text(
+                                _getPhaseTitle(_currentViewIndex),
                                 style: GoogleFonts.orbitron(
-                                  fontSize: isSmallScreen ? 12 : 14,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: isSmallScreen ? 16 : 20,
+                                  fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                   letterSpacing: 1.5,
                                 ),
-                                textAlign: TextAlign.center, // Ortala
                               ),
-                              const SizedBox(height: 4), // Yazılar arası boşluk
-                              Text(
-                                '(Progress: ${(planet.totalProgress * 100).toInt()}%)',
-                                style: GoogleFonts.exo2(
-                                  fontSize: isSmallScreen ? 10 : 11,
-                                  color: Colors.white70,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: planet.phase == PlanetPhase.deadRock
-                                ? Colors.grey.shade700
-                                : planet.phase == PlanetPhase.blueHope
-                                    ? Colors.blue.shade800
-                                    : Colors.green.shade800,
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
 
-                  // Phase Başlığı
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 12.0 : 20.0,
-                      vertical: isSmallScreen ? 4.0 : 6.0,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        planet.phaseTitle,
-                        style: GoogleFonts.orbitron(
-                          fontSize: isSmallScreen ? 16 : 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // ORTA KISIM: Gezegen PageView
+                  Expanded(
+                    flex: 6,
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: 3,
+                      onPageChanged: (index) {
+                        // Sadece widget hala ekrandaysa (mounted) state güncelle
+                        if (mounted) {
+                          setState(() {
+                            _currentViewIndex = index;
+                          });
+                        }
+                      },
+                      itemBuilder: (context, index) {
+                        final bool isLocked = _isStageLocked(index, totalSteps);
+                        final displayState = !isLocked && index == actualStageIndex
+                            ? currentPlanetState 
+                            : _getPreviewState(index);
 
-                  const SizedBox(height: 10),
-
-                  // GEZEGEN - Sabit yükseklik ve AspectRatio kaldırıldı
-                  // İçerik ne kadar yer kaplarsa o kadar uzayacak
-                  Center(
-                    child: SizedBox(
-                      width: screenWidth * (isSmallScreen ? 0.7 : 0.8),
-                      // Yükseklik kısıtlaması yok, PlanetWidget kendi boyutunu belirler
-                      child: PlanetWidget(planetState: planet),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20), // Gezegen ile alt panel arası boşluk
-
-                  // ALT PANEL (Neon Container)
-                  Container(
-                    margin: EdgeInsets.all(isSmallScreen ? 8 : 12),
-                    child: NeonContainer(
-                      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                      glowColor: Colors.cyanAccent,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.bolt,
-                                color: Colors.amber,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'KINETIC POTENTIAL:',
-                                style: GoogleFonts.orbitron(
-                                  fontSize: isSmallScreen ? 10 : 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white70,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: isSmallScreen ? 6 : 8),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end, // Hizalama
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  Formatters.formatNumberWithCommas(energy.steps),
-                                  style: GoogleFonts.orbitron(
-                                    fontSize: isSmallScreen ? 20 : 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    letterSpacing: 2,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 4.0), // Hizalama düzeltmesi
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.bolt,
-                                      color: Colors.amber,
-                                      size: 18,
-                                    ),
-                                    Text(
-                                      'STEPS',
-                                      style: GoogleFonts.orbitron(
-                                        fontSize: isSmallScreen ? 12 : 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.amber,
-                                        letterSpacing: 1.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: isSmallScreen ? 12 : 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Progress',
-                                style: GoogleFonts.exo2(
-                                  fontSize: isSmallScreen ? 10 : 11,
-                                  color: Colors.white54,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              Text(
-                                '${_calculateProgressPercentage(energy.steps)}%',
-                                style: GoogleFonts.orbitron(
-                                  fontSize: isSmallScreen ? 11 : 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.cyanAccent,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: isSmallScreen ? 6 : 8),
-                          Stack(
-                            children: [
-                              Container(
-                                height: isSmallScreen ? 8 : 10,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                              ),
-                              FractionallySizedBox(
-                                widthFactor: _calculateProgressPercentage(energy.steps) / 100.0,
-                                child: Container(
-                                  height: isSmallScreen ? 8 : 10,
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [Colors.cyanAccent, Colors.amber],
-                                    ),
-                                    borderRadius: BorderRadius.circular(5),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.cyanAccent.withOpacity(0.5),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
-                                      ),
+                        return AnimatedScale(
+                          duration: const Duration(milliseconds: 300),
+                          scale: _currentViewIndex == index ? 1.0 : 0.85,
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final availableSize = constraints.maxWidth < constraints.maxHeight 
+                                  ? constraints.maxWidth 
+                                  : constraints.maxHeight;
+                              
+                              return Center(
+                                child: SizedBox(
+                                  width: availableSize * 0.9,
+                                  height: availableSize * 0.9,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      PlanetWidget(planetState: displayState),
+                                      if (isLocked)
+                                        ClipOval(
+                                          child: BackdropFilter(
+                                            filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                                            child: Container(
+                                              color: Colors.black.withOpacity(0.5),
+                                              alignment: Alignment.center,
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.all(12),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.black.withOpacity(0.6),
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(
+                                                        color: Colors.redAccent.withOpacity(0.5),
+                                                        width: 2,
+                                                      ),
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.lock_outline,
+                                                      color: Colors.redAccent,
+                                                      size: 32,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    "LOCKED",
+                                                    style: GoogleFonts.orbitron(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                      letterSpacing: 2,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    "Reach ${index * _milestoneStep} Steps",
+                                                    style: GoogleFonts.exo2(
+                                                      fontSize: 12,
+                                                      color: Colors.redAccent,
+                                                      letterSpacing: 0.5,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),
-                              ),
-                            ],
+                              );
+                            }
                           ),
-                          SizedBox(height: isSmallScreen ? 4 : 6),
-                          Text(
-                            'Next milestone: ${_getNextMilestone(energy.steps)} steps',
-                            style: GoogleFonts.exo2(
-                              fontSize: isSmallScreen ? 9 : 10,
-                              color: Colors.white38,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                          if (energy.steps == 0) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              'Keep walking, Captain!',
-                              style: GoogleFonts.exo2(
-                                fontSize: isSmallScreen ? 10 : 11,
-                                color: Colors.white54,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ],
-                          SizedBox(height: isSmallScreen ? 12 : 16),
-                          AnimatedButton(
-                            text: 'HARVEST ENERGY',
-                            backgroundColor: Colors.orange,
-                            disabledColor: Colors.grey.shade700,
-                            onPressed: energy.availableEnergy > 0
-                                ? () {
-                                    provider.harvestEnergy();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Row(
+                        );
+                      },
+                    ),
+                  ),
+
+                  // ALT PANEL
+                  Container(
+                    constraints: BoxConstraints(
+                      maxHeight: screenHeight * 0.30,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                        child: !_isStageLocked(_currentViewIndex, totalSteps)
+                          ? NeonContainer(
+                              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                              glowColor: Colors.cyanAccent,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.bolt,
+                                        color: Colors.amber,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'KINETIC POTENTIAL:',
+                                        style: GoogleFonts.orbitron(
+                                          fontSize: isSmallScreen ? 10 : 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white70,
+                                          letterSpacing: 1.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 6 : 8),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          Formatters.formatNumberWithCommas(energy.steps),
+                                          style: GoogleFonts.orbitron(
+                                            fontSize: isSmallScreen ? 20 : 28,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                            letterSpacing: 2,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 4.0),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                                            const SizedBox(width: 8),
-                                            Flexible(
-                                              child: Text(
-                                                'Energy harvested! +${Formatters.formatNumberWithCommas(energy.availableEnergy)} units',
-                                                style: GoogleFonts.orbitron(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
+                                            const Icon(
+                                              Icons.bolt,
+                                              color: Colors.amber,
+                                              size: 18,
+                                            ),
+                                            Text(
+                                              'STEPS',
+                                              style: GoogleFonts.orbitron(
+                                                fontSize: isSmallScreen ? 12 : 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.amber,
+                                                letterSpacing: 1.5,
                                               ),
                                             ),
                                           ],
                                         ),
-                                        backgroundColor: Colors.green.withOpacity(0.9),
-                                        duration: const Duration(seconds: 2),
-                                        behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 12 : 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Progress',
+                                        style: GoogleFonts.exo2(
+                                          fontSize: isSmallScreen ? 10 : 11,
+                                          color: Colors.white54,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                    );
-                                  }
-                                : null,
-                            padding: EdgeInsets.symmetric(
-                              vertical: isSmallScreen ? 12 : 14,
+                                      Text(
+                                        '${_calculateProgressPercentage(energy.steps)}%',
+                                        style: GoogleFonts.orbitron(
+                                          fontSize: isSmallScreen ? 11 : 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.cyanAccent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 6 : 8),
+                                  Stack(
+                                    children: [
+                                      Container(
+                                        height: isSmallScreen ? 8 : 10,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(5),
+                                        ),
+                                      ),
+                                      FractionallySizedBox(
+                                        widthFactor: _calculateProgressPercentage(energy.steps) / 100.0,
+                                        child: Container(
+                                          height: isSmallScreen ? 8 : 10,
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [Colors.cyanAccent, Colors.amber],
+                                            ),
+                                            borderRadius: BorderRadius.circular(5),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.cyanAccent.withOpacity(0.5),
+                                                blurRadius: 8,
+                                                spreadRadius: 1,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 4 : 6),
+                                  Text(
+                                    'Next milestone: ${_getNextMilestone(energy.steps)} steps',
+                                    style: GoogleFonts.exo2(
+                                      fontSize: isSmallScreen ? 9 : 10,
+                                      color: Colors.white38,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                  if (energy.steps == 0) ...[
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Keep walking, Captain!',
+                                      style: GoogleFonts.exo2(
+                                        fontSize: isSmallScreen ? 10 : 11,
+                                        color: Colors.white54,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                  SizedBox(height: isSmallScreen ? 12 : 16),
+                                  AnimatedButton(
+                                    text: 'HARVEST ENERGY',
+                                    backgroundColor: Colors.orange,
+                                    disabledColor: Colors.grey.shade700,
+                                    onPressed: energy.availableEnergy > 0
+                                        ? () {
+                                            provider.harvestEnergy();
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Row(
+                                                  children: [
+                                                    const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                                                    const SizedBox(width: 8),
+                                                    Flexible(
+                                                      child: Text(
+                                                        'Energy harvested! +${Formatters.formatNumberWithCommas(energy.availableEnergy)} units',
+                                                        style: GoogleFonts.orbitron(
+                                                          color: Colors.white,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                backgroundColor: Colors.green.withOpacity(0.9),
+                                                duration: const Duration(seconds: 2),
+                                                behavior: SnackBarBehavior.floating,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        : null,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: isSmallScreen ? 12 : 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : NeonContainer(
+                              padding: const EdgeInsets.all(20),
+                              glowColor: Colors.grey,
+                              child: Center(
+                                child: Text(
+                                  "LOCKED ZONE",
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.orbitron(
+                                    color: Colors.white60,
+                                    fontSize: 14,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
                       ),
                     ),
                   ),

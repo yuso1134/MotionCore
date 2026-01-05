@@ -3,11 +3,14 @@ import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart'; // İzin kütüphanesi
 import 'providers/motion_core_provider.dart';
 import 'services/sensor_service.dart';
+import 'services/background_service.dart'; // Arkaplan servisi
 import 'screens/dashboard_screen.dart';
 import 'screens/splash_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Flutter engine'i hazırla
+  
+  // Arkaplan servisini başlat (İzinler alındıktan sonra çalışacak ama init edelim)
   runApp(const MotionCoreApp());
 }
 
@@ -43,17 +46,33 @@ class MotionCoreHome extends StatefulWidget {
   State<MotionCoreHome> createState() => _MotionCoreHomeState();
 }
 
-class _MotionCoreHomeState extends State<MotionCoreHome> {
+// WidgetsBindingObserver ekledik: Uygulama durumunu dinlemek için (Ön/Arka plan)
+class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObserver {
   SensorService? _sensorService;
   bool _isInit = false;
 
   @override
   void initState() {
     super.initState();
-    // initState'te context'e erişmek için addPostFrameCallback kullanılır
+    // Observer'ı kaydet
+    WidgetsBinding.instance.addObserver(this);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeSensors();
     });
+  }
+
+  // Uygulama durumu değiştiğinde çalışır (Ön plana gelme vs.)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // Uygulama tekrar ön plana geldiğinde (Resumed)
+    if (state == AppLifecycleState.resumed) {
+      // Verileri hafızadan tekrar yükle (Arkaplanda artmış olabilir)
+      final provider = Provider.of<MotionCoreProvider>(context, listen: false);
+      provider.initialize(); // Verileri yeniden yükle
+    }
   }
 
   Future<void> _initializeSensors() async {
@@ -64,22 +83,33 @@ class _MotionCoreHomeState extends State<MotionCoreHome> {
     bool granted = await _requestPermissions();
     if (!granted) {
       debugPrint("Physical Activity permission denied!");
-      // İzin verilmezse kullanıcıya uyarı gösterilebilir veya demo modu açılabilir
       return;
     }
+    
+    // 1.1 Bildirim izinleri (Android 13+ için)
+    if (await Permission.notification.isDenied) {
+      await Permission.notification.request();
+    }
 
-    // 2. Provider'a erişim (listen: false olmalı çünkü sadece metot çağırıyoruz)
+    // 2. Arkaplan servisini başlat
+    try {
+      await initializeService();
+    } catch (e) {
+      debugPrint("Background service init error: $e");
+    }
+
+    // 3. Provider'a erişim (listen: false olmalı çünkü sadece metot çağırıyoruz)
     final provider = Provider.of<MotionCoreProvider>(context, listen: false);
     _sensorService = SensorService(provider);
     
     try {
-      // 3. İlk adım sayısını al
+      // 4. İlk adım sayısını al
       final initialSteps = await _sensorService!.getInitialStepCount();
       if (initialSteps > 0) {
         provider.updateSteps(initialSteps);
       }
       
-      // 4. Sensor stream'lerini başlat
+      // 5. Sensor stream'lerini başlat (Foreground'da dinlemek için)
       await _sensorService!.startListening();
     } catch (e) {
       // Sensor erişimi yoksa veya hata varsa, logla
@@ -107,6 +137,8 @@ class _MotionCoreHomeState extends State<MotionCoreHome> {
 
   @override
   void dispose() {
+    // Observer'ı kaldır
+    WidgetsBinding.instance.removeObserver(this);
     _sensorService?.stopListening();
     super.dispose();
   }
