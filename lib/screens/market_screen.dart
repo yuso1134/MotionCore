@@ -265,6 +265,69 @@ class MarketScreen extends StatelessWidget {
                               }
                             },
                           ),
+
+                          SizedBox(height: isSmallScreen ? 30 : 40),
+
+                          // SIFIRLA BUTONU (En Alta Eklendi)
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: () {
+                                // Onay Dialogu
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    backgroundColor: const Color(0xFF1A1A1A),
+                                    title: Text(
+                                      'Reset Market?',
+                                      style: GoogleFonts.orbitron(color: Colors.redAccent),
+                                    ),
+                                    content: Text(
+                                      'This will remove all purchased items and active boosts. Your energy units will remain.',
+                                      style: GoogleFonts.exo2(color: Colors.white70),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: Text('Cancel', style: TextStyle(color: Colors.white)),
+                                      ),
+                                      TextButton(
+                                        onPressed: () async {
+                                          Navigator.pop(context); // Dialogu kapat
+                                          await provider.resetMarketData(); // Sıfırla
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Market data reset successfully.'),
+                                              backgroundColor: Colors.orange,
+                                            ),
+                                          );
+                                        },
+                                        child: Text('Reset', style: TextStyle(color: Colors.redAccent)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                              icon: Icon(Icons.refresh, color: Colors.redAccent.withOpacity(0.7)),
+                              label: Text(
+                                'RESET MARKET DATA',
+                                style: GoogleFonts.orbitron(
+                                  color: Colors.redAccent.withOpacity(0.7),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(color: Colors.redAccent.withOpacity(0.3)),
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                          SizedBox(height: isSmallScreen ? 20 : 30),
                         ],
                       ),
                     ),

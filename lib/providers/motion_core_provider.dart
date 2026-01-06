@@ -17,6 +17,10 @@ class MotionCoreProvider with ChangeNotifier {
   Map<String, dynamic> _purchasedItems = {};
   double _stepMultiplier = 1.0;
   double _harvestBonus = 1.0;
+
+  // Market'ten alınan özelliklerin aktif durumları
+  bool _isNeonGlowActive = false;
+  bool _isParticleEffectsActive = false;
   
   String? _lastDate;
   Map<String, int> _dailySteps = {};
@@ -27,6 +31,10 @@ class MotionCoreProvider with ChangeNotifier {
   Map<String, dynamic> get purchasedItems => _purchasedItems;
   double get stepMultiplier => _stepMultiplier;
   double get harvestBonus => _harvestBonus;
+
+  // Arayüzün erişmesi için getter'lar
+  bool get isNeonGlowActive => _isNeonGlowActive;
+  bool get isParticleEffectsActive => _isParticleEffectsActive;
 
   MotionCoreProvider() {
     initialize();
@@ -89,12 +97,21 @@ class MotionCoreProvider with ChangeNotifier {
       final expiry = _purchasedItems['step_multiplier_2x'] as int?;
       if (expiry != null && expiry > DateTime.now().millisecondsSinceEpoch) {
         _stepMultiplier = 2.0;
+      } else {
+        _purchasedItems.remove('step_multiplier_2x');
+        StorageService.savePurchasedItems(_purchasedItems);
       }
     }
     
     if (_purchasedItems.containsKey('energy_bonus_50')) {
       _harvestBonus = 1.5;
     }
+
+    // Görsel efektlerin durumunu güncelle
+    _isNeonGlowActive = _purchasedItems.containsKey('neon_glow');
+    _isParticleEffectsActive = _purchasedItems.containsKey('particle_effects');
+
+    notifyListeners();
   }
   
   void _checkAndUpdateDailySteps() {
@@ -146,7 +163,6 @@ class MotionCoreProvider with ChangeNotifier {
       _saveEnergyData();
       _updateTodaySteps();
       
-      // HER ADIMDA GÜNCELLE
       notifyListeners();
     }
   }
@@ -252,6 +268,15 @@ class MotionCoreProvider with ChangeNotifier {
     _saveEnergyDataImmediate();
     notifyListeners();
     return true;
+  }
+
+  // Market verilerini sıfırlama (Yeni eklenen method)
+  Future<void> resetMarketData() async {
+    _purchasedItems.clear();
+    await StorageService.savePurchasedItems(_purchasedItems);
+    _updateActiveBoosts(); // Efektleri ve boostları sıfırla
+    _saveEnergyDataImmediate(); // Enerji verilerini kaydet (harcamalar silinmez, sadece itemlar)
+    notifyListeners();
   }
   
   Future<Map<String, int>> getDailySteps(int days) async {

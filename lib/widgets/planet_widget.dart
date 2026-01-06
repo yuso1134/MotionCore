@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart'; // Provider eklendi
 import '../models/planet_state.dart';
+import '../providers/motion_core_provider.dart'; // Provider sınıfı eklendi
 
 class PlanetWidget extends StatelessWidget {
   final PlanetState planetState;
@@ -13,6 +15,11 @@ class PlanetWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Provider'dan market özelliklerinin durumunu al
+    final provider = Provider.of<MotionCoreProvider>(context);
+    final bool isNeonActive = provider.isNeonGlowActive;
+    final bool isParticlesActive = provider.isParticleEffectsActive;
+
     return LayoutBuilder(builder: (context, constraints) {
       final planetSize = math.min(constraints.maxWidth, constraints.maxHeight);
 
@@ -23,19 +30,71 @@ class PlanetWidget extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Arkaplan glow
+              // Arkaplan glow (Neon Efekti varsa daha parlak)
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: _getSubtleGlowColor(),
-                      blurRadius: 30,
-                      spreadRadius: 5,
+                      color: isNeonActive 
+                          ? _getNeonGlowColor().withOpacity(0.6) // Daha parlak
+                          : _getSubtleGlowColor(),
+                      blurRadius: isNeonActive ? 50 : 30, // Daha geniş blur
+                      spreadRadius: isNeonActive ? 10 : 5, // Daha geniş yayılma
                     ),
                   ],
                 ),
+              )
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
+              .scale(
+                begin: const Offset(1.0, 1.0),
+                end: isNeonActive ? const Offset(1.1, 1.1) : const Offset(1.02, 1.02), // Neon varsa nefes alma efekti
+                duration: const Duration(seconds: 2),
+                curve: Curves.easeInOut,
               ),
+
+              // Particle Effects (Parçacıklar)
+              if (isParticlesActive)
+                ...List.generate(5, (index) {
+                  // Rastgele yörüngelerde dönen parçacıklar
+                  final random = math.Random(index);
+                  return Positioned.fill(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: 4 + random.nextDouble() * 4,
+                        height: 4 + random.nextDouble() * 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.6),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: _getNeonGlowColor().withOpacity(0.8),
+                              blurRadius: 5,
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .custom(
+                    duration: Duration(seconds: 3 + index),
+                    builder: (context, value, child) {
+                      // Basit bir yörünge hareketi
+                      final angle = value * 2 * math.pi;
+                      final radius = planetSize * 0.6 + (index * 10);
+                      return Transform.translate(
+                        offset: Offset(
+                          math.cos(angle + index) * radius,
+                          math.sin(angle + index) * radius * 0.3, // Eliptik yörünge
+                        ),
+                        child: child,
+                      );
+                    },
+                  );
+                }),
+
               // Ana gezegen
               Container(
                 decoration: BoxDecoration(
@@ -69,6 +128,18 @@ class PlanetWidget extends StatelessWidget {
         return Colors.blue.withOpacity(0.2);
       case PlanetPhase.greenEden:
         return Colors.green.withOpacity(0.2);
+    }
+  }
+
+  // Neon efekti için renk (Genellikle gezegen renginin daha canlı hali)
+  Color _getNeonGlowColor() {
+    switch (planetState.phase) {
+      case PlanetPhase.deadRock:
+        return Colors.purpleAccent; // Dead Rock için mor neon
+      case PlanetPhase.blueHope:
+        return Colors.cyanAccent; // Blue Hope için turkuaz neon
+      case PlanetPhase.greenEden:
+        return Colors.greenAccent; // Green Eden için parlak yeşil neon
     }
   }
 
