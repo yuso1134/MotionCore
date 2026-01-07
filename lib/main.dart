@@ -50,6 +50,7 @@ class MotionCoreHome extends StatefulWidget {
 class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObserver {
   SensorService? _sensorService;
   bool _isInit = false;
+  bool _isLoading = true; // Yüklenme durumunu takip et
 
   @override
   void initState() {
@@ -57,6 +58,7 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
     // Observer'ı kaydet
     WidgetsBinding.instance.addObserver(this);
     
+    // UI çizildikten sonra sensörleri başlat
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeSensors();
     });
@@ -70,8 +72,11 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
     // Uygulama tekrar ön plana geldiğinde (Resumed)
     if (state == AppLifecycleState.resumed) {
       // Verileri hafızadan tekrar yükle (Arkaplanda artmış olabilir)
-      final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-      provider.initialize(); // Verileri yeniden yükle
+      // mounted kontrolü ekledik
+      if (mounted) {
+        final provider = Provider.of<MotionCoreProvider>(context, listen: false);
+        provider.initialize(); // Verileri yeniden yükle
+      }
     }
   }
 
@@ -79,60 +84,82 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
     if (_isInit) return;
     _isInit = true;
 
-    // 1. İzinleri kontrol et ve iste
-    bool granted = await _requestPermissions();
-    if (!granted) {
-      debugPrint("Physical Activity permission denied!");
-      return;
-    }
-    
-    // 1.1 Bildirim izinleri (Android 13+ için)
-    if (await Permission.notification.isDenied) {
-      await Permission.notification.request();
-    }
-
-    // 2. Arkaplan servisini başlat
     try {
-      await initializeService();
-    } catch (e) {
-      debugPrint("Background service init error: $e");
-    }
-
-    // 3. Provider'a erişim (listen: false olmalı çünkü sadece metot çağırıyoruz)
-    final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-    _sensorService = SensorService(provider);
-    
-    try {
-      // 4. İlk adım sayısını al
-      final initialSteps = await _sensorService!.getInitialStepCount();
-      if (initialSteps > 0) {
-        provider.updateSteps(initialSteps);
+      // 1. İzinleri kontrol et ve iste
+      bool granted = await _requestPermissions();
+      if (!granted) {
+        debugPrint("Physical Activity permission denied!");
+        // İzin verilmezse de uygulamayı aç, sadece sensör çalışmaz
       }
       
-      // 5. Sensor stream'lerini başlat (Foreground'da dinlemek için)
-      await _sensorService!.startListening();
+      // 1.1 Bildirim izinleri (Android 13+ için)
+      // try-catch içine alarak hata olsa bile devam etmesini sağla
+      try {
+        if (await Permission.notification.isDenied) {
+          await Permission.notification.request();
+        }
+      } catch (e) {
+        debugPrint("Notification permission error: $e");
+      }
+
+      // 2. Arkaplan servisini başlat
+      try {
+        await initializeService();
+      } catch (e) {
+        debugPrint("Background service init error: $e");
+      }
+
+      // 3. Provider'a erişim (listen: false olmalı çünkü sadece metot çağırıyoruz)
+      if (mounted) {
+        final provider = Provider.of<MotionCoreProvider>(context, listen: false);
+        _sensorService = SensorService(provider);
+        
+        try {
+          // 4. İlk adım sayısını al
+          final initialSteps = await _sensorService!.getInitialStepCount();
+          if (initialSteps > 0) {
+            provider.updateSteps(initialSteps);
+          }
+          
+          // 5. Sensor stream'lerini başlat (Foreground'da dinlemek için)
+          await _sensorService!.startListening();
+        } catch (e) {
+          // Sensor erişimi yoksa veya hata varsa, logla
+          debugPrint('Sensor initialization failed: $e');
+        }
+      }
     } catch (e) {
-      // Sensor erişimi yoksa veya hata varsa, logla
-      debugPrint('Sensor initialization failed: $e');
+      debugPrint("General initialization error: $e");
+    } finally {
+      // Her durumda yüklemeyi bitir ve dashboard'u göster
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   // İzin isteme fonksiyonu
   Future<bool> _requestPermissions() async {
-    // Android 10 (API 29) ve üzeri için ACTIVITY_RECOGNITION izni gerekir
-    final status = await Permission.activityRecognition.request();
-    
-    if (status.isGranted) {
-      return true;
-    } else if (status.isDenied) {
-      // Kullanıcı reddetti, tekrar iste
-      return false;
-    } else if (status.isPermanentlyDenied) {
-      // Kullanıcı kalıcı olarak reddetti, ayarlara yönlendir
-      openAppSettings();
-      return false;
+    try {
+      // Android 10 (API 29) ve üzeri için ACTIVITY_RECOGNITION izni gerekir
+      final status = await Permission.activityRecognition.request();
+      
+      if (status.isGranted) {
+        return true;
+      } else if (status.isDenied) {
+        // Kullanıcı reddetti, tekrar iste (opsiyonel)
+        return false;
+      } else if (status.isPermanentlyDenied) {
+        // Kullanıcı kalıcı olarak reddetti
+        // openAppSettings(); // Otomatik açmak kullanıcıyı rahatsız edebilir, sadece false dön
+        return false;
+      }
+    } catch (e) {
+      debugPrint("Permission request error: $e");
     }
-    return false;
+    return false; // Hata durumunda veya izin yoksa false
   }
 
   @override
@@ -145,8 +172,10 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
-    return SplashScreen(
-      child: const DashboardScreen(),
-    );
+    // Yükleniyor ise Splash, bitti ise Dashboard
+    if (_isLoading) {
+      return const SplashScreen(child: SizedBox()); // child boş olabilir, SplashScreen kendi içeriğini gösterir
+    }
+    return const DashboardScreen();
   }
 }

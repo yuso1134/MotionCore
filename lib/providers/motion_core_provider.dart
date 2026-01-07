@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart'; // Color için
 import '../models/planet_state.dart';
 import '../models/energy_units.dart';
 import '../services/storage_service.dart';
@@ -18,9 +19,13 @@ class MotionCoreProvider with ChangeNotifier {
   double _stepMultiplier = 1.0;
   double _harvestBonus = 1.0;
 
-  // Market'ten alınan özelliklerin aktif durumları
+  // Market özellikleri
   bool _isNeonGlowActive = false;
   bool _isParticleEffectsActive = false;
+  bool _isCustomColorsActive = false;
+  
+  // Seçilen özel renk (null ise varsayılan renkler kullanılır)
+  Color? _customPlanetColor;
   
   String? _lastDate;
   Map<String, int> _dailySteps = {};
@@ -35,6 +40,17 @@ class MotionCoreProvider with ChangeNotifier {
   // Arayüzün erişmesi için getter'lar
   bool get isNeonGlowActive => _isNeonGlowActive;
   bool get isParticleEffectsActive => _isParticleEffectsActive;
+  bool get isCustomColorsActive => _isCustomColorsActive;
+  Color? get customPlanetColor => _customPlanetColor;
+
+  // Ürün fiyatları (İade işlemi için gerekli)
+  final Map<String, int> _itemPrices = {
+    'step_multiplier_2x': 1,
+    'energy_bonus_50': 1,
+    'neon_glow': 1,
+    'particle_effects': 1,
+    'custom_colors': 1,
+  };
 
   MotionCoreProvider() {
     initialize();
@@ -81,6 +97,12 @@ class MotionCoreProvider with ChangeNotifier {
       _dailySteps = await StorageService.loadDailySteps(30);
       _checkAndUpdateDailySteps();
       
+      // Kaydedilen rengi yükle (Hex string olarak saklanmış olabilir)
+      if (_purchasedItems.containsKey('selected_color')) {
+        final colorValue = _purchasedItems['selected_color'] as int;
+        _customPlanetColor = Color(colorValue);
+      }
+      
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
@@ -107,12 +129,28 @@ class MotionCoreProvider with ChangeNotifier {
       _harvestBonus = 1.5;
     }
 
-    // Görsel efektlerin durumunu güncelle
     _isNeonGlowActive = _purchasedItems.containsKey('neon_glow');
     _isParticleEffectsActive = _purchasedItems.containsKey('particle_effects');
+    _isCustomColorsActive = _purchasedItems.containsKey('custom_colors');
 
     notifyListeners();
   }
+  
+  // Özel renk seçme metodu
+  Future<void> setCustomPlanetColor(Color? color) async {
+    _customPlanetColor = color;
+    
+    if (color != null) {
+      _purchasedItems['selected_color'] = color.value;
+    } else {
+      _purchasedItems.remove('selected_color');
+    }
+    
+    await StorageService.savePurchasedItems(_purchasedItems);
+    notifyListeners();
+  }
+  
+  // ... (Diğer metodlar aynı kalıyor) ...
   
   void _checkAndUpdateDailySteps() {
     final now = DateTime.now();
@@ -270,12 +308,58 @@ class MotionCoreProvider with ChangeNotifier {
     return true;
   }
 
-  // Market verilerini sıfırlama (Yeni eklenen method)
-  Future<void> resetMarketData() async {
+  // Market verilerini sıfırlama ve İADE (Refund)
+  Future<void> refundMarketData() async {
+    int totalRefund = 0;
+    
+    // Satın alınan ürünlerin fiyatlarını hesapla
+    _purchasedItems.forEach((key, value) {
+      if (_itemPrices.containsKey(key)) {
+        totalRefund += _itemPrices[key]!;
+      }
+    });
+
+    // Parayı iade et
+    _energyUnits = _energyUnits.copyWith(
+      totalHarvested: _energyUnits.totalHarvested + totalRefund,
+    );
+
+    // Ürünleri sil
     _purchasedItems.clear();
+    _customPlanetColor = null;
     await StorageService.savePurchasedItems(_purchasedItems);
-    _updateActiveBoosts(); // Efektleri ve boostları sıfırla
-    _saveEnergyDataImmediate(); // Enerji verilerini kaydet (harcamalar silinmez, sadece itemlar)
+    
+    _updateActiveBoosts();
+    _saveEnergyDataImmediate(); 
+    notifyListeners();
+  }
+
+  // FACTORY RESET (Tam sıfırlama)
+  Future<void> factoryReset() async {
+    // 1. Enerji ve Adımları sıfırla
+    _energyUnits = EnergyUnits(steps: 0, availableEnergy: 0, totalHarvested: 0);
+    _lastStepCount = 0;
+    
+    // 2. Gezegeni sıfırla
+    _planetState = PlanetState(hydrosphere: 0.0, atmosphere: 0.0, biosphere: 0.0);
+    
+    // 3. Market ve Görevleri sıfırla
+    _purchasedItems.clear();
+    _completedMissions.clear();
+    _customPlanetColor = null;
+    
+    // 4. Günlük verileri sıfırla
+    _dailySteps.clear();
+    _lastDate = null;
+
+    // Veritabanına kaydet
+    _saveEnergyDataImmediate();
+    _savePlanetDataImmediate();
+    await StorageService.savePurchasedItems(_purchasedItems);
+    await StorageService.saveCompletedMissions(_completedMissions);
+    // StorageService'e clearAll gibi bir metod eklemek daha temiz olurdu ama şimdilik üzerine yazıyoruz.
+    
+    _updateActiveBoosts();
     notifyListeners();
   }
   

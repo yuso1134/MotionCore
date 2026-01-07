@@ -95,14 +95,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  String _getPhaseTitle(int index) {
-    switch (index) {
-      case 0: return 'Phase 1: Grey Rock';
-      case 1: return 'Phase 2: Blue Hope';
-      case 2: return 'Phase 3: Green Eden';
-      default: return 'Unknown Phase';
-    }
-  }
+  // _getPhaseTitle fonksiyonunu kaldırdım.
 
   @override
   Widget build(BuildContext context) {
@@ -176,6 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
+                                  // Kilit Durumu veya Progress
                                   if (!_isStageLocked(_currentViewIndex, totalSteps))
                                     Text(
                                       '(Active / Completed)',
@@ -222,25 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ],
                         ),
-                        
-                        if (_currentViewIndex == actualStageIndex) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Padding(
-                              padding: EdgeInsets.only(left: isSmallScreen ? 4.0 : 8.0),
-                              child: Text(
-                                _getPhaseTitle(_currentViewIndex),
-                                style: GoogleFonts.orbitron(
-                                  fontSize: isSmallScreen ? 16 : 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        // BURADAKİ PHASE BAŞLIĞI KISMI KALDIRILDI
                       ],
                     ),
                   ),
@@ -252,7 +228,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       controller: _pageController,
                       itemCount: 3,
                       onPageChanged: (index) {
-                        // Sadece widget hala ekrandaysa (mounted) state güncelle
                         if (mounted) {
                           setState(() {
                             _currentViewIndex = index;
@@ -346,7 +321,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // ALT PANEL
                   Container(
                     constraints: BoxConstraints(
-                      maxHeight: screenHeight * 0.30,
+                      maxHeight: screenHeight * 0.35,
                     ),
                     child: SingleChildScrollView(
                       child: Padding(
@@ -493,44 +468,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                   ],
                                   SizedBox(height: isSmallScreen ? 12 : 16),
-                                  AnimatedButton(
-                                    text: 'HARVEST ENERGY',
-                                    backgroundColor: Colors.orange,
-                                    disabledColor: Colors.grey.shade700,
-                                    onPressed: energy.availableEnergy > 0
-                                        ? () {
-                                            provider.harvestEnergy();
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Row(
-                                                  children: [
-                                                    const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                                                    const SizedBox(width: 8),
-                                                    Flexible(
-                                                      child: Text(
-                                                        'Energy harvested! +${Formatters.formatNumberWithCommas(energy.availableEnergy)} units',
-                                                        style: GoogleFonts.orbitron(
-                                                          color: Colors.white,
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: 12,
-                                                        ),
+                                  
+                                  // BUTONLAR (Sadece +10 butonu var)
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 3,
+                                        child: AnimatedButton(
+                                          text: 'HARVEST ENERGY',
+                                          backgroundColor: Colors.orange,
+                                          disabledColor: Colors.grey.shade700,
+                                          onPressed: energy.availableEnergy > 0
+                                              ? () {
+                                                  provider.harvestEnergy();
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Row(
+                                                        children: [
+                                                          const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                                                          const SizedBox(width: 8),
+                                                          Flexible(
+                                                            child: Text(
+                                                              'Energy harvested! +${Formatters.formatNumberWithCommas(energy.availableEnergy)} units',
+                                                              style: GoogleFonts.orbitron(
+                                                                color: Colors.white,
+                                                                fontWeight: FontWeight.bold,
+                                                                fontSize: 12,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      backgroundColor: Colors.green.withOpacity(0.9),
+                                                      duration: const Duration(seconds: 2),
+                                                      behavior: SnackBarBehavior.floating,
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(8),
                                                       ),
                                                     ),
-                                                  ],
-                                                ),
-                                                backgroundColor: Colors.green.withOpacity(0.9),
-                                                duration: const Duration(seconds: 2),
-                                                behavior: SnackBarBehavior.floating,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        : null,
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: isSmallScreen ? 12 : 14,
-                                    ),
+                                                  );
+                                                }
+                                              : null,
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: isSmallScreen ? 12 : 14,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      // TEST BUTTON (+10 STEPS)
+                                      Expanded(
+                                        flex: 1,
+                                        child: AnimatedButton(
+                                          text: '+10',
+                                          backgroundColor: Colors.blueAccent,
+                                          disabledColor: Colors.grey.shade700,
+                                          onPressed: () {
+                                            // Mevcut adımları al ve 10 ekle
+                                            provider.updateSteps(energy.steps + 10);
+                                          },
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: isSmallScreen ? 12 : 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
