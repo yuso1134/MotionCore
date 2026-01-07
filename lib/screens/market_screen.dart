@@ -36,7 +36,7 @@ class MarketScreen extends StatelessWidget {
                         ),
                         SizedBox(width: isSmallScreen ? 8 : 12),
                         Text(
-                          'MARKET',
+                          provider.getString('market_title'),
                           style: GoogleFonts.orbitron(
                             fontSize: isSmallScreen ? 20 : 24,
                             fontWeight: FontWeight.bold,
@@ -81,7 +81,7 @@ class MarketScreen extends StatelessWidget {
                         children: [
                           // Energy Boosts
                           Text(
-                            'ENERGY BOOSTS',
+                            provider.getString('energy_boosts'),
                             style: GoogleFonts.orbitron(
                               fontSize: isSmallScreen ? 12 : 14,
                               fontWeight: FontWeight.bold,
@@ -93,9 +93,10 @@ class MarketScreen extends StatelessWidget {
 
                           _buildMarketItem(
                             context: context,
-                            title: 'Step Multiplier x2',
-                            description: 'Double energy from steps for 24h',
-                            price: 1, // Fiyat 1
+                            provider: provider,
+                            title: provider.getString('item_step_x2'),
+                            description: provider.getString('desc_step_x2'),
+                            price: provider.getPrice('step_multiplier_2x'), // FİYAT GÜNCELLENDİ
                             icon: Icons.speed,
                             color: Colors.blueAccent,
                             isSmallScreen: isSmallScreen,
@@ -103,10 +104,11 @@ class MarketScreen extends StatelessWidget {
                             itemId: 'step_multiplier_2x',
                             isPurchased: provider.purchasedItems.containsKey('step_multiplier_2x'),
                             onPurchase: () async {
-                              final success = await provider.purchaseMarketItem('step_multiplier_2x', 1, durationHours: 24);
+                              final price = provider.getPrice('step_multiplier_2x');
+                              final success = await provider.purchaseMarketItem('step_multiplier_2x', price, durationHours: 24);
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Purchased! Step multiplier active for 24h'), backgroundColor: Colors.green),
+                                  SnackBar(content: Text(provider.getString('purchased')), backgroundColor: Colors.green),
                                 );
                               }
                             },
@@ -116,9 +118,10 @@ class MarketScreen extends StatelessWidget {
 
                           _buildMarketItem(
                             context: context,
-                            title: 'Energy Bonus +50%',
-                            description: 'Get 50% more energy from harvest',
-                            price: 1, // Fiyat 1
+                            provider: provider,
+                            title: provider.getString('item_bonus_50'),
+                            description: provider.getString('desc_bonus_50'),
+                            price: provider.getPrice('energy_bonus_50'), // FİYAT GÜNCELLENDİ
                             icon: Icons.trending_up,
                             color: Colors.greenAccent,
                             isSmallScreen: isSmallScreen,
@@ -126,10 +129,11 @@ class MarketScreen extends StatelessWidget {
                             itemId: 'energy_bonus_50',
                             isPurchased: provider.purchasedItems.containsKey('energy_bonus_50'),
                             onPurchase: () async {
-                              final success = await provider.purchaseMarketItem('energy_bonus_50', 1);
+                              final price = provider.getPrice('energy_bonus_50');
+                              final success = await provider.purchaseMarketItem('energy_bonus_50', price);
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Purchased! Energy bonus active'), backgroundColor: Colors.green),
+                                  SnackBar(content: Text(provider.getString('purchased')), backgroundColor: Colors.green),
                                 );
                               }
                             },
@@ -139,7 +143,7 @@ class MarketScreen extends StatelessWidget {
 
                           // Planet Customizations
                           Text(
-                            'PLANET CUSTOMIZATIONS',
+                            provider.getString('planet_customizations'),
                             style: GoogleFonts.orbitron(
                               fontSize: isSmallScreen ? 12 : 14,
                               fontWeight: FontWeight.bold,
@@ -151,9 +155,10 @@ class MarketScreen extends StatelessWidget {
 
                           _buildMarketItem(
                             context: context,
-                            title: 'Neon Glow Effect',
-                            description: 'Enhanced planet glow animation',
-                            price: 1, // Fiyat 1
+                            provider: provider,
+                            title: provider.getString('item_neon'),
+                            description: provider.getString('desc_neon'),
+                            price: provider.getPrice('neon_glow'), // FİYAT GÜNCELLENDİ
                             icon: Icons.light_mode,
                             color: Colors.purpleAccent,
                             isSmallScreen: isSmallScreen,
@@ -161,10 +166,11 @@ class MarketScreen extends StatelessWidget {
                             itemId: 'neon_glow',
                             isPurchased: provider.isNeonGlowActive,
                             onPurchase: () async {
-                              final success = await provider.purchaseMarketItem('neon_glow', 1);
+                              final price = provider.getPrice('neon_glow');
+                              final success = await provider.purchaseMarketItem('neon_glow', price);
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Purchased! Neon glow effect unlocked'), backgroundColor: Colors.green),
+                                  SnackBar(content: Text(provider.getString('purchased')), backgroundColor: Colors.green),
                                 );
                               }
                             },
@@ -174,9 +180,10 @@ class MarketScreen extends StatelessWidget {
 
                           _buildMarketItem(
                             context: context,
-                            title: 'Particle Effects',
-                            description: 'Add particles around planet',
-                            price: 1, // Fiyat 1
+                            provider: provider,
+                            title: provider.getString('item_particles'),
+                            description: provider.getString('desc_particles'),
+                            price: provider.getPrice('particle_effects'), // FİYAT GÜNCELLENDİ
                             icon: Icons.auto_awesome,
                             color: Colors.orange,
                             isSmallScreen: isSmallScreen,
@@ -184,10 +191,11 @@ class MarketScreen extends StatelessWidget {
                             itemId: 'particle_effects',
                             isPurchased: provider.isParticleEffectsActive,
                             onPurchase: () async {
-                              final success = await provider.purchaseMarketItem('particle_effects', 1);
+                              final price = provider.getPrice('particle_effects');
+                              final success = await provider.purchaseMarketItem('particle_effects', price);
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Purchased! Particle effects unlocked'), backgroundColor: Colors.green),
+                                  SnackBar(content: Text(provider.getString('purchased')), backgroundColor: Colors.green),
                                 );
                               }
                             },
@@ -197,9 +205,10 @@ class MarketScreen extends StatelessWidget {
 
                           _buildMarketItem(
                             context: context,
-                            title: 'Custom Planet Colors',
-                            description: 'Unlock custom color schemes',
-                            price: 1, // Fiyat 1
+                            provider: provider,
+                            title: provider.getString('item_colors'),
+                            description: provider.getString('desc_colors'),
+                            price: provider.getPrice('custom_colors'), // FİYAT GÜNCELLENDİ
                             icon: Icons.palette,
                             color: Colors.pinkAccent,
                             isSmallScreen: isSmallScreen,
@@ -207,16 +216,16 @@ class MarketScreen extends StatelessWidget {
                             itemId: 'custom_colors',
                             isPurchased: provider.isCustomColorsActive,
                             onPurchase: () async {
-                              final success = await provider.purchaseMarketItem('custom_colors', 1);
+                              final price = provider.getPrice('custom_colors');
+                              final success = await provider.purchaseMarketItem('custom_colors', price);
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Purchased! Custom colors unlocked'), backgroundColor: Colors.green),
+                                  SnackBar(content: Text(provider.getString('purchased')), backgroundColor: Colors.green),
                                 );
                               }
                             },
                           ),
 
-                          // CUSTOM COLORS PANEL
                           if (provider.isCustomColorsActive)
                             Container(
                               margin: const EdgeInsets.only(top: 12, left: 16, right: 16),
@@ -230,7 +239,7 @@ class MarketScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'SELECT COLOR THEME',
+                                    provider.getString('select_color'),
                                     style: GoogleFonts.orbitron(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -243,11 +252,11 @@ class MarketScreen extends StatelessWidget {
                                     spacing: 12,
                                     runSpacing: 12,
                                     children: [
-                                      _buildColorOption(context, provider, null, "Default"),
-                                      _buildColorOption(context, provider, Colors.purpleAccent, "Purple"),
-                                      _buildColorOption(context, provider, Colors.amber, "Gold"),
-                                      _buildColorOption(context, provider, Colors.tealAccent, "Teal"),
-                                      _buildColorOption(context, provider, Colors.redAccent, "Crimson"),
+                                      _buildColorOption(context, provider, null, provider.getString('color_default')),
+                                      _buildColorOption(context, provider, Colors.purpleAccent, provider.getString('color_purple')),
+                                      _buildColorOption(context, provider, Colors.amber, provider.getString('color_gold')),
+                                      _buildColorOption(context, provider, Colors.tealAccent, provider.getString('color_teal')),
+                                      _buildColorOption(context, provider, Colors.redAccent, provider.getString('color_crimson')),
                                     ],
                                   ),
                                 ],
@@ -260,7 +269,6 @@ class MarketScreen extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              // RESET MARKET DATA (İadeli)
                               TextButton.icon(
                                 onPressed: () {
                                   showDialog(
@@ -268,27 +276,27 @@ class MarketScreen extends StatelessWidget {
                                     builder: (context) => AlertDialog(
                                       backgroundColor: const Color(0xFF1A1A1A),
                                       title: Text(
-                                        'Reset & Refund?',
+                                        provider.getString('reset_refund_title'),
                                         style: GoogleFonts.orbitron(color: Colors.orangeAccent),
                                       ),
                                       content: Text(
-                                        'Items will be removed and spent energy will be refunded.',
+                                        provider.getString('reset_refund_desc'),
                                         style: GoogleFonts.exo2(color: Colors.white70),
                                       ),
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.pop(context),
-                                          child: Text('Cancel', style: TextStyle(color: Colors.white)),
+                                          child: Text(provider.getString('cancel'), style: TextStyle(color: Colors.white)),
                                         ),
                                         TextButton(
                                           onPressed: () async {
                                             Navigator.pop(context);
                                             await provider.refundMarketData();
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text('Market reset & refunded.'), backgroundColor: Colors.orange),
+                                              SnackBar(content: Text(provider.getString('success_reset')), backgroundColor: Colors.orange),
                                             );
                                           },
-                                          child: Text('Reset', style: TextStyle(color: Colors.orangeAccent)),
+                                          child: Text(provider.getString('reset'), style: TextStyle(color: Colors.orangeAccent)),
                                         ),
                                       ],
                                     ),
@@ -296,7 +304,7 @@ class MarketScreen extends StatelessWidget {
                                 },
                                 icon: Icon(Icons.refresh, color: Colors.orangeAccent.withOpacity(0.7)),
                                 label: Text(
-                                  'RESET MARKET',
+                                  provider.getString('reset_market'),
                                   style: GoogleFonts.orbitron(
                                     color: Colors.orangeAccent.withOpacity(0.7),
                                     fontSize: 10,
@@ -313,7 +321,6 @@ class MarketScreen extends StatelessWidget {
                                 ),
                               ),
 
-                              // FACTORY RESET (Tam sıfırlama)
                               TextButton.icon(
                                 onPressed: () {
                                   showDialog(
@@ -321,27 +328,27 @@ class MarketScreen extends StatelessWidget {
                                     builder: (context) => AlertDialog(
                                       backgroundColor: const Color(0xFF1A1A1A),
                                       title: Text(
-                                        'FACTORY RESET?',
+                                        provider.getString('factory_reset_title'),
                                         style: GoogleFonts.orbitron(color: Colors.redAccent),
                                       ),
                                       content: Text(
-                                        'WARNING: This will wipe EVERYTHING. Steps, Energy, Planet Progress, Items. Cannot be undone!',
+                                        provider.getString('factory_reset_desc'),
                                         style: GoogleFonts.exo2(color: Colors.white70, fontWeight: FontWeight.bold),
                                       ),
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.pop(context),
-                                          child: Text('Cancel', style: TextStyle(color: Colors.white)),
+                                          child: Text(provider.getString('cancel'), style: TextStyle(color: Colors.white)),
                                         ),
                                         TextButton(
                                           onPressed: () async {
                                             Navigator.pop(context);
                                             await provider.factoryReset();
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text('App reset to factory settings.'), backgroundColor: Colors.redAccent),
+                                              SnackBar(content: Text(provider.getString('success_factory')), backgroundColor: Colors.redAccent),
                                             );
                                           },
-                                          child: Text('WIPE ALL', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                          child: Text(provider.getString('wipe_all'), style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                                         ),
                                       ],
                                     ),
@@ -349,7 +356,7 @@ class MarketScreen extends StatelessWidget {
                                 },
                                 icon: Icon(Icons.delete_forever, color: Colors.redAccent.withOpacity(0.7)),
                                 label: Text(
-                                  'FACTORY RESET',
+                                  provider.getString('factory_reset'),
                                   style: GoogleFonts.orbitron(
                                     color: Colors.redAccent.withOpacity(0.7),
                                     fontSize: 10,
@@ -368,6 +375,33 @@ class MarketScreen extends StatelessWidget {
                             ],
                           ),
                           
+                          SizedBox(height: 24),
+                          
+                          // DİL SEÇENEĞİ
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'LANGUAGE: ',
+                                  style: GoogleFonts.orbitron(
+                                    color: Colors.white54,
+                                    fontSize: 12,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                _buildLanguageButton('TR', 'tr', provider),
+                                const SizedBox(width: 8),
+                                Container(width: 1, height: 16, color: Colors.white24),
+                                const SizedBox(width: 8),
+                                _buildLanguageButton('EN', 'en', provider),
+                              ],
+                            ),
+                          ),
+                          
                           SizedBox(height: isSmallScreen ? 20 : 30),
                         ],
                       ),
@@ -376,6 +410,30 @@ class MarketScreen extends StatelessWidget {
                 ],
               );
             },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageButton(String label, String code, MotionCoreProvider provider) {
+    final bool isSelected = provider.currentLanguage == code;
+    return InkWell(
+      onTap: () => provider.setLanguage(code),
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.cyanAccent.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+          border: isSelected ? Border.all(color: Colors.cyanAccent.withOpacity(0.5)) : null,
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.orbitron(
+            color: isSelected ? Colors.cyanAccent : Colors.white38,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
@@ -426,6 +484,7 @@ class MarketScreen extends StatelessWidget {
 
   Widget _buildMarketItem({
     required BuildContext context,
+    required MotionCoreProvider provider,
     required String title,
     required String description,
     required int price,
@@ -530,7 +589,7 @@ class MarketScreen extends StatelessWidget {
                       : null,
                 ),
                 child: Text(
-                  isPurchased ? 'OWNED' : 'BUY',
+                  isPurchased ? provider.getString('owned') : provider.getString('buy'),
                   style: GoogleFonts.orbitron(
                     fontSize: isSmallScreen ? 12 : 13,
                     fontWeight: FontWeight.bold,

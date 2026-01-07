@@ -2,22 +2,26 @@ class PlanetState {
   final double hydrosphere; // 0.0 - 1.0
   final double atmosphere; // 0.0 - 1.0
   final double biosphere; // 0.0 - 1.0
+  final double humanity; // 0.0 - 1.0 (Yeni alan)
 
   PlanetState({
     this.hydrosphere = 0.0,
     this.atmosphere = 0.0,
     this.biosphere = 0.0,
+    this.humanity = 0.0,
   });
 
   PlanetState copyWith({
     double? hydrosphere,
     double? atmosphere,
     double? biosphere,
+    double? humanity,
   }) {
     return PlanetState(
       hydrosphere: hydrosphere ?? this.hydrosphere,
       atmosphere: atmosphere ?? this.atmosphere,
       biosphere: biosphere ?? this.biosphere,
+      humanity: humanity ?? this.humanity,
     );
   }
 
@@ -34,9 +38,11 @@ class PlanetState {
     }
   }
 
-  // Toplam ilerleme yüzdesi
+  // Toplam ilerleme yüzdesi (Humanity dahil)
   double get totalProgress {
-    return (hydrosphere + atmosphere + biosphere) / 3.0;
+    // Toplam 4 parametre var, ancak Phase 1-2'de Humanity yok.
+    // Basitlik için 4'e bölüyoruz, maksimum %100 olması için arayüzde kontrol edeceğiz.
+    return (hydrosphere + atmosphere + biosphere + humanity) / 4.0;
   }
 
   // Stage numarası (1, 2, 3)
@@ -63,7 +69,7 @@ class PlanetState {
     }
   }
 
-  // Phase başlığı
+  // Phase başlığı (Eski kodda kalmış olabilir ama artık kullanılmıyor, yine de modelde dursun)
   String get phaseTitle {
     switch (phase) {
       case PlanetPhase.deadRock:

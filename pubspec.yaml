@@ -10,29 +10,23 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_animate: ^4.5.2
-  # Dart 3.5.3 ile uyumlu sürüm
   google_fonts: ^6.2.1
   pedometer: ^4.1.1
   provider: ^6.1.5+1
-  # sensors_plus: ^7.0.0  <- Hata veren paketi geçici olarak kaldırdık
-  # Dart 3.5.3 ile uyumlu sürüm
   shared_preferences: ^2.3.2
-  # İzinleri yönetmek için eklendi
   permission_handler: ^11.3.0
-  # Arkaplan servisi için
-  flutter_background_service: ^5.0.0
-  flutter_local_notifications: ^17.0.0
+  # Arkaplan servisi için gerekli paketler (Tekrar eklendi)
+  flutter_background_service: ^5.0.10
+  flutter_local_notifications: ^18.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
   flutter_launcher_icons: ^0.14.4
-  # XML kütüphanesi sürüm çakışması için sürümü düşürdük
   flutter_native_splash: ^2.4.1
   image: ^4.7.2
 
-# Sürüm çakışmalarını çözmek için path ve meta kütüphanelerini sabitliyoruz
 dependency_overrides:
   path: 1.9.0
   meta: 1.15.0

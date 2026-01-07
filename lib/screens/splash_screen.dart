@@ -4,12 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 
 class SplashScreen extends StatefulWidget {
-  final Widget child;
-  
-  const SplashScreen({
-    super.key,
-    required this.child,
-  });
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -17,7 +12,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  bool _showContent = false;
 
   @override
   void initState() {
@@ -26,16 +20,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       duration: const Duration(seconds: 3),
       vsync: this,
     );
-    
-    // 2.5 saniye sonra içeriği göster (splash screen gösterimi için)
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        setState(() {
-          _showContent = true;
-        });
-      }
-    });
-    
     _controller.repeat();
   }
 
@@ -47,10 +31,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    if (_showContent) {
-      return widget.child;
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFF000510),
       body: Container(
@@ -280,4 +260,3 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     );
   }
 }
-

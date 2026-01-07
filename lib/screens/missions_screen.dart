@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../widgets/starry_background.dart';
 import '../widgets/neon_container.dart';
+import '../widgets/animated_button.dart';
 import '../providers/motion_core_provider.dart';
 import '../utils/formatters.dart';
 
@@ -20,9 +21,8 @@ class MissionsScreen extends StatelessWidget {
         child: SafeArea(
           child: Consumer<MotionCoreProvider>(
             builder: (context, provider, child) {
-              final energy = provider.energyUnits;
-              final planet = provider.planetState;
-
+              final dailyStatus = provider.dailyMissionsStatus;
+              
               return Column(
                 children: [
                   // Header
@@ -36,14 +36,26 @@ class MissionsScreen extends StatelessWidget {
                           size: isSmallScreen ? 24 : 28,
                         ),
                         SizedBox(width: isSmallScreen ? 8 : 12),
-                        Text(
-                          'MISSIONS',
-                          style: GoogleFonts.orbitron(
-                            fontSize: isSmallScreen ? 20 : 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 2,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              provider.getString('missions_title'),
+                              style: GoogleFonts.orbitron(
+                                fontSize: isSmallScreen ? 18 : 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                            Text(
+                              provider.getString('missions_subtitle'),
+                              style: GoogleFonts.exo2(
+                                fontSize: isSmallScreen ? 10 : 12,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -51,179 +63,141 @@ class MissionsScreen extends StatelessWidget {
 
                   // Missions List
                   Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Daily Missions
-                          Text(
-                            'DAILY MISSIONS',
-                            style: GoogleFonts.orbitron(
-                              fontSize: isSmallScreen ? 12 : 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.cyanAccent,
-                              letterSpacing: 1.5,
-                            ),
+                    child: ListView(
+                      padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16),
+                      children: [
+                        // --- GÜNLÜK GÖREVLER (DAILY MISSIONS) ---
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                provider.getString('daily_missions'), // DİL DESTEĞİ
+                                style: GoogleFonts.orbitron(
+                                  fontSize: isSmallScreen ? 12 : 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orangeAccent,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                              Text(
+                                provider.getString('next_reset'), // DİL DESTEĞİ
+                                style: GoogleFonts.exo2(
+                                  fontSize: 10,
+                                  color: Colors.white38,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: isSmallScreen ? 12 : 16),
-                          
-                          _buildMissionCard(
-                            context: context,
-                            title: 'Walk 5,000 Steps',
-                            description: 'Complete your daily walking goal',
-                            progress: energy.steps,
-                            target: 5000,
-                            reward: 500,
-                            icon: Icons.directions_walk,
-                            color: Colors.blue,
-                            isSmallScreen: isSmallScreen,
-                            missionId: 'walk_5000_steps',
-                            isCompleted: provider.completedMissions.contains('walk_5000_steps'),
-                            onClaim: () async {
-                              if (energy.steps >= 5000 && !provider.completedMissions.contains('walk_5000_steps')) {
-                                final success = await provider.claimMissionReward('walk_5000_steps', 500);
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Mission completed! +500 energy'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          ),
+                        ),
+                        
+                        _buildDailyMissionItem(
+                          context: context,
+                          provider: provider,
+                          missionId: 'daily_3k',
+                          title: provider.getString('daily_3k_title'),
+                          description: provider.getString('daily_3k_desc'),
+                          reward: 500, // Ödül
+                          status: dailyStatus['daily_3k'] ?? 0,
+                          icon: Icons.directions_walk,
+                          isSmallScreen: isSmallScreen,
+                        ),
+                        SizedBox(height: isSmallScreen ? 8 : 12),
+                        
+                        _buildDailyMissionItem(
+                          context: context,
+                          provider: provider,
+                          missionId: 'daily_7k',
+                          title: provider.getString('daily_7k_title'),
+                          description: provider.getString('daily_7k_desc'),
+                          reward: 1000,
+                          status: dailyStatus['daily_7k'] ?? 0,
+                          icon: Icons.hiking,
+                          isSmallScreen: isSmallScreen,
+                        ),
+                        SizedBox(height: isSmallScreen ? 8 : 12),
+                        
+                        _buildDailyMissionItem(
+                          context: context,
+                          provider: provider,
+                          missionId: 'daily_10k',
+                          title: provider.getString('daily_10k_title'),
+                          description: provider.getString('daily_10k_desc'),
+                          reward: 2000,
+                          status: dailyStatus['daily_10k'] ?? 0,
+                          icon: Icons.emoji_events,
+                          isSmallScreen: isSmallScreen,
+                        ),
 
-                          SizedBox(height: isSmallScreen ? 12 : 16),
+                        SizedBox(height: 24), // Bölüm Ayırıcı
 
-                          _buildMissionCard(
-                            context: context,
-                            title: 'Harvest 1,000 Energy',
-                            description: 'Collect energy from your steps',
-                            progress: energy.totalHarvested,
-                            target: 1000,
-                            reward: 200,
-                            icon: Icons.bolt,
-                            color: Colors.amber,
-                            isSmallScreen: isSmallScreen,
-                            missionId: 'harvest_1000_energy',
-                            isCompleted: provider.completedMissions.contains('harvest_1000_energy'),
-                            onClaim: () async {
-                              if (energy.totalHarvested >= 1000 && !provider.completedMissions.contains('harvest_1000_energy')) {
-                                final success = await provider.claimMissionReward('harvest_1000_energy', 200);
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Mission completed! +200 energy'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          ),
-
-                          SizedBox(height: isSmallScreen ? 24 : 30),
-
-                          // Stage Missions
-                          Text(
-                            'STAGE PROGRESSION',
-                            style: GoogleFonts.orbitron(
-                              fontSize: isSmallScreen ? 12 : 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purpleAccent,
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 12 : 16),
-
-                          _buildMissionCard(
-                            context: context,
-                            title: 'Reach Stage 2: Blue Hope',
-                            description: 'Unlock atmosphere (30%+)',
-                            progress: (planet.atmosphere * 100).toInt(),
-                            target: 30,
-                            reward: 1000,
-                            icon: Icons.water_drop,
+                        // --- ANA GÖREVLER (MAIN MISSIONS) ---
+                        Text(
+                          'MAIN MISSIONS', // Dil desteği eklenebilir veya mevcut başlık kalsın
+                          style: GoogleFonts.orbitron(
+                            fontSize: isSmallScreen ? 12 : 14,
+                            fontWeight: FontWeight.bold,
                             color: Colors.blueAccent,
-                            isSmallScreen: isSmallScreen,
-                            missionId: 'reach_stage_2',
-                            isCompleted: provider.completedMissions.contains('reach_stage_2') || planet.phase.index >= 1,
-                            onClaim: () async {
-                              if (planet.phase.index >= 1 && !provider.completedMissions.contains('reach_stage_2')) {
-                                final success = await provider.claimMissionReward('reach_stage_2', 1000);
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Mission completed! +1000 energy'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
+                            letterSpacing: 1.5,
                           ),
+                        ),
+                        SizedBox(height: 12),
 
-                          SizedBox(height: isSmallScreen ? 12 : 16),
-
-                          _buildMissionCard(
-                            context: context,
-                            title: 'Reach Stage 3: Green Eden',
-                            description: 'Unlock biosphere (30%+)',
-                            progress: (planet.biosphere * 100).toInt(),
-                            target: 30,
-                            reward: 2000,
-                            icon: Icons.eco,
-                            color: Colors.greenAccent,
-                            isSmallScreen: isSmallScreen,
-                            missionId: 'reach_stage_3',
-                            isCompleted: provider.completedMissions.contains('reach_stage_3') || planet.phase.index >= 2,
-                            onClaim: () async {
-                              if (planet.phase.index >= 2 && !provider.completedMissions.contains('reach_stage_3')) {
-                                final success = await provider.claimMissionReward('reach_stage_3', 2000);
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Mission completed! +2000 energy'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          ),
-
-                          SizedBox(height: isSmallScreen ? 12 : 16),
-
-                          _buildMissionCard(
-                            context: context,
-                            title: 'Complete Terraforming',
-                            description: 'Reach 100% total progress',
-                            progress: (planet.totalProgress * 100).toInt(),
-                            target: 100,
-                            reward: 5000,
-                            icon: Icons.rocket_launch,
-                            color: Colors.orange,
-                            isSmallScreen: isSmallScreen,
-                            missionId: 'complete_terraforming',
-                            isCompleted: provider.completedMissions.contains('complete_terraforming') || planet.totalProgress >= 1.0,
-                            onClaim: () async {
-                              if (planet.totalProgress >= 1.0 && !provider.completedMissions.contains('complete_terraforming')) {
-                                final success = await provider.claimMissionReward('complete_terraforming', 5000);
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Mission completed! +5000 energy'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          ),
-                        ],
-                      ),
+                        _buildMissionItem(
+                          context: context,
+                          provider: provider,
+                          missionId: 'mission_1',
+                          title: provider.getString('mission_1_title'),
+                          description: provider.getString('mission_1_desc'),
+                          reward: 5000, // Ödüller arttırıldı
+                          isCompleted: provider.energyUnits.steps >= 1000,
+                          isClaimed: provider.completedMissions.contains('mission_1'),
+                          icon: Icons.flag,
+                          isSmallScreen: isSmallScreen,
+                        ),
+                        SizedBox(height: isSmallScreen ? 12 : 16),
+                        _buildMissionItem(
+                          context: context,
+                          provider: provider,
+                          missionId: 'mission_2',
+                          title: provider.getString('mission_2_title'),
+                          description: provider.getString('mission_2_desc'),
+                          reward: 10000,
+                          isCompleted: provider.planetState.hydrosphere >= 0.1,
+                          isClaimed: provider.completedMissions.contains('mission_2'),
+                          icon: Icons.water_drop,
+                          isSmallScreen: isSmallScreen,
+                        ),
+                        SizedBox(height: isSmallScreen ? 12 : 16),
+                        _buildMissionItem(
+                          context: context,
+                          provider: provider,
+                          missionId: 'mission_3',
+                          title: provider.getString('mission_3_title'),
+                          description: provider.getString('mission_3_desc'),
+                          reward: 15000,
+                          isCompleted: provider.planetState.atmosphere >= 0.2,
+                          isClaimed: provider.completedMissions.contains('mission_3'),
+                          icon: Icons.cloud,
+                          isSmallScreen: isSmallScreen,
+                        ),
+                        SizedBox(height: isSmallScreen ? 12 : 16),
+                        _buildMissionItem(
+                          context: context,
+                          provider: provider,
+                          missionId: 'mission_4',
+                          title: provider.getString('mission_4_title'),
+                          description: provider.getString('mission_4_desc'),
+                          reward: 20000,
+                          isCompleted: provider.planetState.biosphere > 0,
+                          isClaimed: provider.completedMissions.contains('mission_4'),
+                          icon: Icons.eco,
+                          isSmallScreen: isSmallScreen,
+                        ),
+                        SizedBox(height: 40),
+                      ],
                     ),
                   ),
                 ],
@@ -235,118 +209,235 @@ class MissionsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMissionCard({
+  // GÜNLÜK GÖREV ÖĞESİ
+  Widget _buildDailyMissionItem({
     required BuildContext context,
+    required MotionCoreProvider provider,
+    required String missionId,
     required String title,
     required String description,
-    required int progress,
-    required int target,
     required int reward,
+    required int status, // 0: Not Completed, 1: Completed, 2: Claimed
     required IconData icon,
-    required Color color,
     required bool isSmallScreen,
-    required VoidCallback onClaim,
-    String? missionId,
-    bool isCompleted = false,
   }) {
-    final progressPercent = (progress / target).clamp(0.0, 1.0);
-    final isClaimable = progress >= target && !isCompleted;
-
+    bool isCompleted = status >= 1;
+    bool isClaimed = status == 2;
+    
+    Color statusColor = isClaimed 
+        ? Colors.grey 
+        : (isCompleted ? Colors.orangeAccent : Colors.white24);
+        
     return NeonContainer(
-      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-      glowColor: isCompleted ? Colors.greenAccent : color,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+      glowColor: isCompleted && !isClaimed ? Colors.orangeAccent : Colors.transparent,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: isSmallScreen ? 20 : 24),
-              SizedBox(width: isSmallScreen ? 8 : 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Container(
+            padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: statusColor.withOpacity(0.5)),
+            ),
+            child: Icon(
+              icon,
+              color: statusColor,
+              size: isSmallScreen ? 20 : 24,
+            ),
+          ),
+          SizedBox(width: isSmallScreen ? 10 : 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.orbitron(
+                    fontSize: isSmallScreen ? 12 : 14,
+                    fontWeight: FontWeight.bold,
+                    color: isClaimed ? Colors.white54 : Colors.white,
+                    decoration: isClaimed ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  description,
+                  style: GoogleFonts.exo2(
+                    fontSize: isSmallScreen ? 10 : 11,
+                    color: Colors.white70,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Row(
                   children: [
+                    Icon(Icons.bolt, size: 12, color: Colors.amber),
+                    SizedBox(width: 4),
                     Text(
-                      title,
-                      style: GoogleFonts.orbitron(
-                        fontSize: isSmallScreen ? 12 : 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      description,
+                      provider.getString('reward', params: {'amount': Formatters.formatNumberWithCommas(reward)}),
                       style: GoogleFonts.exo2(
-                        fontSize: isSmallScreen ? 10 : 11,
-                        color: Colors.white54,
+                        fontSize: isSmallScreen ? 9 : 10,
+                        color: Colors.amber,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
-              ),
-              if (isCompleted)
-                Icon(Icons.check_circle, color: Colors.greenAccent, size: 24)
-              else if (isClaimable)
-                IconButton(
-                  icon: Icon(Icons.celebration, color: Colors.amber),
-                  onPressed: onClaim,
-                ),
-            ],
+              ],
+            ),
           ),
-          SizedBox(height: isSmallScreen ? 12 : 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '$progress / $target',
-                style: GoogleFonts.orbitron(
-                  fontSize: isSmallScreen ? 11 : 12,
-                  color: Colors.white70,
+          SizedBox(width: 8),
+          if (isCompleted && !isClaimed)
+            SizedBox(
+              height: 32,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final success = await provider.claimDailyMissionReward(missionId, reward);
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(provider.getString('mission_claimed')),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  textStyle: GoogleFonts.orbitron(fontSize: 10, fontWeight: FontWeight.bold),
                 ),
+                child: Text(provider.getString('claim')),
               ),
-              Text(
-                'Reward: ${Formatters.formatNumberWithCommas(reward)}',
+            )
+          else if (isClaimed)
+            Icon(Icons.check_circle, color: Colors.grey, size: 24)
+          else
+            Icon(Icons.lock_clock, color: Colors.white12, size: 24),
+        ],
+      ),
+    );
+  }
+
+  // ANA GÖREV ÖĞESİ (Eskisiyle aynı, sadece kopyaladım)
+  Widget _buildMissionItem({
+    required BuildContext context,
+    required MotionCoreProvider provider,
+    required String missionId,
+    required String title,
+    required String description,
+    required int reward,
+    required bool isCompleted,
+    required bool isClaimed,
+    required IconData icon,
+    required bool isSmallScreen,
+  }) {
+    Color statusColor = isClaimed 
+        ? Colors.grey 
+        : (isCompleted ? Colors.greenAccent : Colors.white24);
+        
+    return NeonContainer(
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      glowColor: isCompleted && !isClaimed ? Colors.greenAccent : Colors.transparent,
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: statusColor.withOpacity(0.5)),
+            ),
+            child: Icon(
+              icon,
+              color: statusColor,
+              size: isSmallScreen ? 24 : 30,
+            ),
+          ),
+          SizedBox(width: isSmallScreen ? 12 : 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.orbitron(
+                    fontSize: isSmallScreen ? 14 : 16,
+                    fontWeight: FontWeight.bold,
+                    color: isClaimed ? Colors.white54 : Colors.white,
+                    decoration: isClaimed ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  description,
+                  style: GoogleFonts.exo2(
+                    fontSize: isSmallScreen ? 11 : 12,
+                    color: Colors.white70,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.bolt, size: 14, color: Colors.amber),
+                    SizedBox(width: 4),
+                    Text(
+                      provider.getString('reward', params: {'amount': Formatters.formatNumberWithCommas(reward)}),
+                      style: GoogleFonts.exo2(
+                        fontSize: isSmallScreen ? 10 : 12,
+                        color: Colors.amber,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 8),
+          if (isCompleted && !isClaimed)
+            AnimatedButton(
+              text: provider.getString('claim'),
+              onPressed: () async {
+                final success = await provider.claimMissionReward(missionId, reward);
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(provider.getString('mission_claimed')),
+                      backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              backgroundColor: Colors.green,
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 12 : 16,
+                vertical: isSmallScreen ? 8 : 10,
+              ),
+            )
+          else if (isClaimed)
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 12 : 16,
+                vertical: isSmallScreen ? 8 : 10,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                provider.getString('claimed'),
                 style: GoogleFonts.orbitron(
-                  fontSize: isSmallScreen ? 11 : 12,
-                  color: Colors.amber,
+                  fontSize: isSmallScreen ? 10 : 12,
+                  color: Colors.white54,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
-          ),
-          SizedBox(height: isSmallScreen ? 8 : 10),
-          Stack(
-            children: [
-              Container(
-                height: isSmallScreen ? 6 : 8,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              FractionallySizedBox(
-                widthFactor: progressPercent,
-                child: Container(
-                  height: isSmallScreen ? 6 : 8,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [color, color.withOpacity(0.7)],
-                    ),
-                    borderRadius: BorderRadius.circular(4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withOpacity(0.5),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );

@@ -6,7 +6,7 @@ import '../providers/motion_core_provider.dart';
 import '../widgets/starry_background.dart';
 import '../widgets/neon_container.dart';
 import '../widgets/animated_button.dart';
-import '../utils/formatters.dart';
+import '../models/planet_state.dart';
 
 class TerraformingConsoleScreen extends StatefulWidget {
   const TerraformingConsoleScreen({super.key});
@@ -16,100 +16,139 @@ class TerraformingConsoleScreen extends StatefulWidget {
 }
 
 class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
+  // Seçili Hedef Faz (Varsayılan olarak mevcut faz veya Blue Hope)
+  PlanetPhase _selectedTargetPhase = PlanetPhase.blueHope;
+
   double _hydrosphereSlider = 0.0;
   double _atmosphereSlider = 0.0;
   double _biosphereSlider = 0.0;
-  bool _biosphereLocked = true;
+  double _humanitySlider = 0.0;
+  
+  // Kilitler (Artık serbest düzenleme olduğu için kilitleri kaldırabiliriz veya mantığa göre tutabiliriz)
+  // Kullanıcı "Ücretsiz düzenleme" istiyorsa kilitler can sıkıcı olabilir. 
+  // Ancak "Dead Rock hariç" dediğiniz için, seçili faza göre kısıtlamalar olabilir.
+  // Blue Hope seçiliyse Humanity kilitli olabilir mesela.
+  bool _humanityLocked = true;
 
   @override
   void initState() {
     super.initState();
     final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-    _hydrosphereSlider = provider.planetState.hydrosphere;
-    _atmosphereSlider = provider.planetState.atmosphere;
-    _biosphereSlider = provider.planetState.biosphere;
-    _biosphereLocked = provider.planetState.hydrosphere < 0.5 || provider.planetState.atmosphere < 0.5;
-  }
-
-  int _calculateEnergyCost() {
-    final provider = Provider.of<MotionCoreProvider>(context, listen: false);
     final current = provider.planetState;
     
-    final hydroDiff = (_hydrosphereSlider - current.hydrosphere).abs();
-    final atmosDiff = (_atmosphereSlider - current.atmosphere).abs();
-    final bioDiff = _biosphereLocked ? 0 : (_biosphereSlider - current.biosphere).abs();
+    // Başlangıçta mevcut fazı seç (Eğer Dead Rock ise Blue Hope'a zorla)
+    _selectedTargetPhase = current.phase == PlanetPhase.deadRock ? PlanetPhase.blueHope : current.phase;
     
-    // Her %1 değişiklik = 100 enerji birimi
-    return ((hydroDiff + atmosDiff + bioDiff) * 100).toInt();
+    _loadValuesForPhase(_selectedTargetPhase, current);
+  }
+  
+  void _loadValuesForPhase(PlanetPhase phase, PlanetState current) {
+    // Burada, eğer kullanıcı o fazdaysa mevcut değerleri, değilse varsayılan değerleri yükleyebiliriz.
+    // Şimdilik mevcut değerleri yüklüyoruz ve kullanıcı değiştirebiliyor.
+    
+    if (phase == PlanetPhase.blueHope) {
+        _hydrosphereSlider = current.hydrosphere < 0.1 ? 0.5 : current.hydrosphere;
+        _atmosphereSlider = current.atmosphere < 0.1 ? 0.5 : current.atmosphere;
+        _biosphereSlider = current.biosphere; // Blue Hope'da biosfer az olabilir
+        _humanitySlider = 0.0; // Blue Hope'da insanlık yok
+        _humanityLocked = true;
+    } else if (phase == PlanetPhase.greenEden) {
+        _hydrosphereSlider = current.hydrosphere < 0.1 ? 0.4 : current.hydrosphere;
+        _atmosphereSlider = current.atmosphere < 0.1 ? 0.4 : current.atmosphere;
+        _biosphereSlider = current.biosphere < 0.1 ? 0.5 : current.biosphere;
+        _humanitySlider = current.humanity;
+        _humanityLocked = false;
+    }
+    
+    // Toplamı dengele (Görsel bozulmasın)
+    _balanceSliders('init');
+  }
+
+  void _balanceSliders(String changedSlider) {
+    double total = _hydrosphereSlider + _atmosphereSlider + _biosphereSlider + _humanitySlider;
+    
+    if (total > 1.0) {
+      double excess = total - 1.0;
+      List<String> others = ['hydro', 'atmos', 'bio', 'human'];
+      others.remove(changedSlider);
+      
+      double othersTotal = 0.0;
+      if (others.contains('hydro')) othersTotal += _hydrosphereSlider;
+      if (others.contains('atmos')) othersTotal += _atmosphereSlider;
+      if (others.contains('bio')) othersTotal += _biosphereSlider;
+      if (others.contains('human')) othersTotal += _humanitySlider;
+      
+      if (othersTotal > 0) {
+        if (others.contains('hydro')) _hydrosphereSlider -= excess * (_hydrosphereSlider / othersTotal);
+        if (others.contains('atmos')) _atmosphereSlider -= excess * (_atmosphereSlider / othersTotal);
+        if (others.contains('bio')) _biosphereSlider -= excess * (_biosphereSlider / othersTotal);
+        if (others.contains('human')) _humanitySlider -= excess * (_humanitySlider / othersTotal);
+      }
+      
+      if (_hydrosphereSlider < 0) _hydrosphereSlider = 0;
+      if (_atmosphereSlider < 0) _atmosphereSlider = 0;
+      if (_biosphereSlider < 0) _biosphereSlider = 0;
+      if (_humanitySlider < 0) _humanitySlider = 0;
+    }
   }
 
   void _commitProcess() {
     final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-    final cost = _calculateEnergyCost();
     
-    if (provider.energyUnits.totalHarvested < cost) {
-      HapticFeedback.heavyImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Insufficient energy! Need ${Formatters.formatNumberWithCommas(cost)} units.',
-                  style: GoogleFonts.orbitron(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.red.withOpacity(0.9),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
-      return;
-    }
-
-    final success = provider.commitTerraforming(
+    // ÜCRETSİZ İŞLEM - Enerji kontrolü yok
+    
+    // Seçili değerleri kaydet
+    provider.commitTerraforming(
       hydrosphere: _hydrosphereSlider,
       atmosphere: _atmosphereSlider,
-      biosphere: _biosphereLocked ? provider.planetState.biosphere : _biosphereSlider,
+      biosphere: _biosphereSlider,
+      humanity: _humanitySlider,
     );
 
-    if (success) {
-      setState(() {
-        _biosphereLocked = _hydrosphereSlider < 0.5 || _atmosphereSlider < 0.5;
-        if (_biosphereLocked) {
-          _biosphereSlider = 0.0;
-        }
-      });
-
-      HapticFeedback.mediumImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Terraforming committed! ${Formatters.formatNumberWithCommas(cost)} units spent.',
-                  style: GoogleFonts.orbitron(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green.withOpacity(0.9),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Planet Updated Successfully!', // Dil desteği eklenebilir
+          style: GoogleFonts.orbitron(fontSize: 12),
         ),
-      );
-    }
+        backgroundColor: Colors.green.withOpacity(0.9),
+      ),
+    );
+  }
+
+  void _showHelpDialog(BuildContext context, dynamic provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: Row(
+          children: [
+            const Icon(Icons.help_outline, color: Colors.cyanAccent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                provider.getString('console_help_title'),
+                style: GoogleFonts.orbitron(color: Colors.cyanAccent, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          provider.getString('console_help_desc'),
+          style: GoogleFonts.exo2(color: Colors.white70, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              provider.getString('got_it'),
+              style: GoogleFonts.orbitron(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -123,26 +162,9 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
         child: SafeArea(
           child: Consumer<MotionCoreProvider>(
             builder: (context, provider, child) {
-              final current = provider.planetState;
-              
-              // Slider değerlerini mevcut state'e göre güncelle
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  setState(() {
-                    _hydrosphereSlider = current.hydrosphere;
-                    _atmosphereSlider = current.atmosphere;
-                    _biosphereSlider = current.biosphere;
-                    _biosphereLocked = current.hydrosphere < 0.5 || current.atmosphere < 0.5;
-                    if (_biosphereLocked && _biosphereSlider > 0) {
-                      _biosphereSlider = 0.0;
-                    }
-                  });
-                }
-              });
-
               return Column(
                 children: [
-                  // Üst Header - X butonu ile
+                  // Üst Header
                   Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: isSmallScreen ? 12.0 : 16.0,
@@ -151,14 +173,21 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const SizedBox(width: 40),
-                        Text(
-                          'TERRAFORM CONSOLE.',
-                          style: GoogleFonts.orbitron(
-                            fontSize: isSmallScreen ? 14 : 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 2,
+                        IconButton(
+                          icon: const Icon(Icons.help_outline, color: Colors.white54, size: 24),
+                          onPressed: () => _showHelpDialog(context, provider),
+                          tooltip: 'Help',
+                        ),
+                        Expanded(
+                          child: Text(
+                            provider.getString('console_title'),
+                            style: GoogleFonts.orbitron(
+                              fontSize: isSmallScreen ? 14 : 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 2,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                         IconButton(
@@ -169,49 +198,51 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                     ),
                   ),
 
-                  // Available Energy - Görseldeki gibi
+                  // GEZEGEN SEÇİCİ (Planet Selector)
                   Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 12.0 : 20.0,
-                      vertical: 8.0,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: NeonContainer(
-                      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                      glowColor: Colors.cyanAccent,
+                      padding: EdgeInsets.all(12),
+                      glowColor: Colors.purpleAccent,
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          Text(
-                            'AVAILABLE ENERGY:',
-                            style: GoogleFonts.orbitron(
-                              fontSize: isSmallScreen ? 10 : 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white70,
-                              letterSpacing: 1.5,
-                            ),
+                          _buildPlanetOption(
+                            PlanetPhase.deadRock, 
+                            provider.getString('dead_rock'), 
+                            Icons.public_off, 
+                            Colors.grey,
+                            false // Dead Rock seçilemez
                           ),
-                          Text(
-                            '${Formatters.formatNumberWithCommas(provider.energyUnits.totalHarvested)} UNITS',
-                            style: GoogleFonts.orbitron(
-                              fontSize: isSmallScreen ? 14 : 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 1,
-                            ),
+                          _buildPlanetOption(
+                            PlanetPhase.blueHope, 
+                            provider.getString('blue_hope'), 
+                            Icons.public, 
+                            Colors.blueAccent,
+                            true
+                          ),
+                          _buildPlanetOption(
+                            PlanetPhase.greenEden, 
+                            provider.getString('green_eden'), 
+                            Icons.forest, 
+                            Colors.greenAccent,
+                            true
                           ),
                         ],
                       ),
                     ),
                   ),
 
-                  // Slider'lar - Görseldeki gibi
+                  // Slider'lar
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
                       child: Column(
                         children: [
                           _buildResourceSlider(
-                            title: 'HYDROSPHERE (Water)',
+                            context: context,
+                            provider: provider,
+                            title: provider.getString('hydrosphere'),
                             icon: Icons.water_drop,
                             value: _hydrosphereSlider,
                             color: Colors.blue,
@@ -219,10 +250,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                             onChanged: (value) {
                               setState(() {
                                 _hydrosphereSlider = value;
-                                _biosphereLocked = _hydrosphereSlider < 0.5 || _atmosphereSlider < 0.5;
-                                if (_biosphereLocked) {
-                                  _biosphereSlider = 0.0;
-                                }
+                                _balanceSliders('hydro');
                               });
                             },
                           ),
@@ -230,7 +258,9 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                           SizedBox(height: isSmallScreen ? 12 : 16),
 
                           _buildResourceSlider(
-                            title: 'ATMOSPHERE (Air)',
+                            context: context,
+                            provider: provider,
+                            title: provider.getString('atmosphere'),
                             icon: Icons.cloud,
                             value: _atmosphereSlider,
                             color: Colors.lightBlue,
@@ -238,10 +268,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                             onChanged: (value) {
                               setState(() {
                                 _atmosphereSlider = value;
-                                _biosphereLocked = _hydrosphereSlider < 0.5 || _atmosphereSlider < 0.5;
-                                if (_biosphereLocked) {
-                                  _biosphereSlider = 0.0;
-                                }
+                                _balanceSliders('atmos');
                               });
                             },
                           ),
@@ -249,19 +276,41 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                           SizedBox(height: isSmallScreen ? 12 : 16),
 
                           _buildResourceSlider(
-                            title: 'BIOSPHERE',
-                            subtitle: _biosphereLocked 
-                                ? '(Flora - Locked)' 
-                                : '(Flora - Unlocked)',
+                            context: context,
+                            provider: provider,
+                            title: provider.getString('biosphere'),
                             icon: Icons.eco,
                             value: _biosphereSlider,
                             color: Colors.green,
-                            locked: _biosphereLocked,
                             isSmallScreen: isSmallScreen,
                             onChanged: (value) {
-                              if (!_biosphereLocked) {
+                              setState(() {
+                                _biosphereSlider = value;
+                                _balanceSliders('bio');
+                              });
+                            },
+                          ),
+                          
+                          SizedBox(height: isSmallScreen ? 12 : 16),
+
+                          // HUMANITY SLIDER (Kilitli olup olmadığı faza göre değişir)
+                          _buildResourceSlider(
+                            context: context,
+                            provider: provider,
+                            title: provider.getString('humanity'),
+                            subtitle: _humanityLocked 
+                                ? provider.getString('locked_humanity') 
+                                : '(Civilization)',
+                            icon: Icons.apartment,
+                            value: _humanitySlider,
+                            color: Colors.orangeAccent,
+                            locked: _humanityLocked,
+                            isSmallScreen: isSmallScreen,
+                            onChanged: (value) {
+                              if (!_humanityLocked) {
                                 setState(() {
-                                  _biosphereSlider = value;
+                                  _humanitySlider = value;
+                                  _balanceSliders('human');
                                 });
                               }
                             },
@@ -269,33 +318,25 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
 
                           SizedBox(height: isSmallScreen ? 24 : 30),
 
-                          // COMMIT PROCESS Button - Görseldeki gibi (mavi)
-                          Builder(
-                            builder: (context) {
-                              final cost = _calculateEnergyCost();
-                              final hasEnoughEnergy = cost > 0 && cost <= provider.energyUnits.totalHarvested;
-                              
-                              return NeonContainer(
-                                padding: EdgeInsets.zero,
-                                glowColor: Colors.blueAccent,
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: hasEnoughEnergy ? _commitProcess : null,
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: AnimatedButton(
-                                      text: 'COMMIT PROCESS',
-                                      backgroundColor: Colors.blueAccent,
-                                      disabledColor: Colors.grey.shade700,
-                                      onPressed: hasEnoughEnergy ? _commitProcess : null,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: isSmallScreen ? 16 : 18,
-                                      ),
-                                    ),
+                          // SAVE CHANGES Button
+                          NeonContainer(
+                            padding: EdgeInsets.zero,
+                            glowColor: Colors.blueAccent,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: _commitProcess,
+                                borderRadius: BorderRadius.circular(8),
+                                child: AnimatedButton(
+                                  text: 'SAVE CHANGES', // Dil desteği eklenebilir
+                                  backgroundColor: Colors.blueAccent,
+                                  onPressed: _commitProcess,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: isSmallScreen ? 16 : 18,
                                   ),
                                 ),
-                              );
-                            },
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -310,7 +351,55 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
     );
   }
 
+  Widget _buildPlanetOption(PlanetPhase phase, String label, IconData icon, Color color, bool isSelectable) {
+    final bool isSelected = _selectedTargetPhase == phase;
+    
+    return GestureDetector(
+      onTap: isSelectable ? () {
+        setState(() {
+          _selectedTargetPhase = phase;
+          // Seçilen faza göre değerleri ve kilitleri güncelle
+          // Provider'dan mevcut durumu alıp üzerine yazmak yerine, varsayılan şablonları yükleyelim
+          final provider = Provider.of<MotionCoreProvider>(context, listen: false);
+          _loadValuesForPhase(phase, provider.planetState);
+        });
+      } : null,
+      child: Opacity(
+        opacity: isSelectable ? 1.0 : 0.3,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isSelected ? color.withOpacity(0.3) : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? color : Colors.white24,
+                  width: isSelected ? 2 : 1,
+                ),
+                boxShadow: isSelected ? [BoxShadow(color: color.withOpacity(0.5), blurRadius: 10)] : null,
+              ),
+              child: Icon(icon, color: isSelected ? color : Colors.white54, size: 24),
+            ),
+            SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.exo2(
+                fontSize: 10,
+                color: isSelected ? Colors.white : Colors.white38,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildResourceSlider({
+    required BuildContext context,
+    required MotionCoreProvider provider,
     required String title,
     String? subtitle,
     required IconData icon,
@@ -320,19 +409,6 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
     required bool isSmallScreen,
     bool locked = false,
   }) {
-    final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-    final current = provider.planetState;
-    
-    // Artış yüzdesini hesapla
-    double increase = 0.0;
-    if (title.contains('HYDROSPHERE')) {
-      increase = ((value - current.hydrosphere) * 100);
-    } else if (title.contains('ATMOSPHERE')) {
-      increase = ((value - current.atmosphere) * 100);
-    } else if (title.contains('BIOSPHERE')) {
-      increase = ((value - current.biosphere) * 100);
-    }
-
     return NeonContainer(
       padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       glowColor: locked ? Colors.redAccent : Colors.cyanAccent,
@@ -378,7 +454,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                     Icon(Icons.lock, color: Colors.redAccent, size: isSmallScreen ? 14 : 16),
                     const SizedBox(width: 4),
                     Text(
-                      'LOCKED',
+                      provider.getString('locked').toUpperCase().replaceAll('(', '').replaceAll(')', ''),
                       style: GoogleFonts.orbitron(
                         fontSize: isSmallScreen ? 8 : 10,
                         color: Colors.redAccent,
@@ -413,17 +489,15 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                   onChangeEnd: (_) => HapticFeedback.mediumImpact(),
                   min: 0.0,
                   max: 1.0,
-                  divisions: 100, // Daha hassas kontrol için
+                  divisions: 100, 
                 ),
               ),
             )
           else
-            // Locked durumunda görsel progress bar
             Padding(
               padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 12 : 16),
               child: Stack(
                 children: [
-                  // Arka plan çubuk
                   Container(
                     height: isSmallScreen ? 8 : 10,
                     decoration: BoxDecoration(
@@ -431,7 +505,6 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ),
-                  // Dolu kısım
                   FractionallySizedBox(
                     widthFactor: value,
                     child: Container(
@@ -464,15 +537,6 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                   color: locked ? Colors.redAccent : color,
                 ),
               ),
-              if (increase > 0 && !locked)
-                Text(
-                  '+${increase.toInt()}% Increase',
-                  style: GoogleFonts.exo2(
-                    fontSize: isSmallScreen ? 11 : 12,
-                    color: Colors.greenAccent,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
             ],
           ),
         ],

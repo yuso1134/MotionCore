@@ -28,7 +28,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _currentViewIndex = 0;
   bool _isInitialized = false;
 
-  static const int _milestoneStep = 500;
+  // Milestone hedefi: 10.000 adım
+  static const int _milestoneStep = 10000;
 
   @override
   void didChangeDependencies() {
@@ -86,16 +87,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  String _getStageName(int index) {
+  String _getStageName(int index, MotionCoreProvider provider) {
     switch (index) {
-      case 0: return 'DEAD ROCK';
-      case 1: return 'BLUE HOPE';
-      case 2: return 'GREEN EDEN';
+      case 0: return provider.getString('dead_rock');
+      case 1: return provider.getString('blue_hope');
+      case 2: return provider.getString('green_eden');
       default: return 'UNKNOWN';
     }
   }
-
-  // _getPhaseTitle fonksiyonunu kaldırdım.
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +156,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   AnimatedSwitcher(
                                     duration: const Duration(milliseconds: 300),
                                     child: Text(
-                                      'STAGE ${_currentViewIndex + 1}: ${_getStageName(_currentViewIndex)}',
+                                      '${provider.getString('stage')} ${_currentViewIndex + 1}: ${_getStageName(_currentViewIndex, provider)}',
                                       key: ValueKey<int>(_currentViewIndex),
                                       style: GoogleFonts.orbitron(
                                         fontSize: isSmallScreen ? 12 : 14,
@@ -172,7 +171,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   // Kilit Durumu veya Progress
                                   if (!_isStageLocked(_currentViewIndex, totalSteps))
                                     Text(
-                                      '(Active / Completed)',
+                                      provider.getString('active_completed'),
                                       style: GoogleFonts.exo2(
                                         fontSize: isSmallScreen ? 10 : 11,
                                         color: Colors.greenAccent,
@@ -181,7 +180,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     )
                                   else
                                     Text(
-                                      '(Locked)',
+                                      provider.getString('locked'),
                                       style: GoogleFonts.exo2(
                                         fontSize: isSmallScreen ? 10 : 11,
                                         color: Colors.redAccent,
@@ -216,7 +215,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ],
                         ),
-                        // BURADAKİ PHASE BAŞLIĞI KISMI KALDIRILDI
                       ],
                     ),
                   ),
@@ -285,7 +283,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                   ),
                                                   const SizedBox(height: 8),
                                                   Text(
-                                                    "LOCKED",
+                                                    provider.getString('locked_zone'),
                                                     style: GoogleFonts.orbitron(
                                                       color: Colors.white,
                                                       fontSize: 14,
@@ -295,7 +293,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                   ),
                                                   const SizedBox(height: 4),
                                                   Text(
-                                                    "Reach ${index * _milestoneStep} Steps",
+                                                    provider.getString('reach_steps', params: {'steps': '${index * _milestoneStep}'}),
                                                     style: GoogleFonts.exo2(
                                                       fontSize: 12,
                                                       color: Colors.redAccent,
@@ -343,7 +341,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'KINETIC POTENTIAL:',
+                                        provider.getString('kinetic_potential'),
                                         style: GoogleFonts.orbitron(
                                           fontSize: isSmallScreen ? 10 : 12,
                                           fontWeight: FontWeight.w600,
@@ -381,7 +379,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                               size: 18,
                                             ),
                                             Text(
-                                              'STEPS',
+                                              provider.getString('steps'),
                                               style: GoogleFonts.orbitron(
                                                 fontSize: isSmallScreen ? 12 : 16,
                                                 fontWeight: FontWeight.bold,
@@ -399,7 +397,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        'Progress',
+                                        provider.getString('progress'),
                                         style: GoogleFonts.exo2(
                                           fontSize: isSmallScreen ? 10 : 11,
                                           color: Colors.white54,
@@ -449,7 +447,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                   SizedBox(height: isSmallScreen ? 4 : 6),
                                   Text(
-                                    'Next milestone: ${_getNextMilestone(energy.steps)} steps',
+                                    provider.getString('next_milestone', params: {'steps': '${_getNextMilestone(energy.steps)}'}),
                                     style: GoogleFonts.exo2(
                                       fontSize: isSmallScreen ? 9 : 10,
                                       color: Colors.white38,
@@ -459,7 +457,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   if (energy.steps == 0) ...[
                                     const SizedBox(height: 6),
                                     Text(
-                                      'Keep walking, Captain!',
+                                      provider.getString('keep_walking'),
                                       style: GoogleFonts.exo2(
                                         fontSize: isSmallScreen ? 10 : 11,
                                         color: Colors.white54,
@@ -469,69 +467,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ],
                                   SizedBox(height: isSmallScreen ? 12 : 16),
                                   
-                                  // BUTONLAR (Sadece +10 butonu var)
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        flex: 3,
-                                        child: AnimatedButton(
-                                          text: 'HARVEST ENERGY',
-                                          backgroundColor: Colors.orange,
-                                          disabledColor: Colors.grey.shade700,
-                                          onPressed: energy.availableEnergy > 0
-                                              ? () {
-                                                  provider.harvestEnergy();
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Row(
-                                                        children: [
-                                                          const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                                                          const SizedBox(width: 8),
-                                                          Flexible(
-                                                            child: Text(
-                                                              'Energy harvested! +${Formatters.formatNumberWithCommas(energy.availableEnergy)} units',
-                                                              style: GoogleFonts.orbitron(
-                                                                color: Colors.white,
-                                                                fontWeight: FontWeight.bold,
-                                                                fontSize: 12,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      backgroundColor: Colors.green.withOpacity(0.9),
-                                                      duration: const Duration(seconds: 2),
-                                                      behavior: SnackBarBehavior.floating,
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius: BorderRadius.circular(8),
+                                  // BUTONLAR (Sadece HARVEST ENERGY kaldı)
+                                  AnimatedButton(
+                                    text: provider.getString('harvest_energy'),
+                                    backgroundColor: Colors.orange,
+                                    disabledColor: Colors.grey.shade700,
+                                    onPressed: energy.availableEnergy > 0
+                                        ? () {
+                                            provider.harvestEnergy();
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Row(
+                                                  children: [
+                                                    const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                                                    const SizedBox(width: 8),
+                                                    Flexible(
+                                                      child: Text(
+                                                        provider.getString('energy_harvested', params: {'amount': Formatters.formatNumberWithCommas(energy.availableEnergy)}),
+                                                        style: GoogleFonts.orbitron(
+                                                          color: Colors.white,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 12,
+                                                        ),
                                                       ),
                                                     ),
-                                                  );
-                                                }
-                                              : null,
-                                          padding: EdgeInsets.symmetric(
-                                            vertical: isSmallScreen ? 12 : 14,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      // TEST BUTTON (+10 STEPS)
-                                      Expanded(
-                                        flex: 1,
-                                        child: AnimatedButton(
-                                          text: '+10',
-                                          backgroundColor: Colors.blueAccent,
-                                          disabledColor: Colors.grey.shade700,
-                                          onPressed: () {
-                                            // Mevcut adımları al ve 10 ekle
-                                            provider.updateSteps(energy.steps + 10);
-                                          },
-                                          padding: EdgeInsets.symmetric(
-                                            vertical: isSmallScreen ? 12 : 14,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                                  ],
+                                                ),
+                                                backgroundColor: Colors.green.withOpacity(0.9),
+                                                duration: const Duration(seconds: 2),
+                                                behavior: SnackBarBehavior.floating,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        : null,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: isSmallScreen ? 12 : 14,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -541,7 +515,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               glowColor: Colors.grey,
                               child: Center(
                                 child: Text(
-                                  "LOCKED ZONE",
+                                  provider.getString('locked_zone'),
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.orbitron(
                                     color: Colors.white60,
@@ -560,7 +534,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
+      bottomNavigationBar: Consumer<MotionCoreProvider>(
+        builder: (context, provider, child) {
+          return _buildBottomNavBar(provider);
+        },
+      ),
     );
   }
 
@@ -577,7 +555,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Widget _buildBottomNavBar() {
+  Widget _buildBottomNavBar(MotionCoreProvider provider) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF000510),
@@ -595,10 +573,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.public, 'WORLD', 0, Colors.blueAccent),
-              _buildNavItem(Icons.assignment, 'MISSIONS', 1, Colors.white70),
-              _buildNavItem(Icons.analytics, 'STATS', 2, Colors.white70),
-              _buildNavItem(Icons.shopping_cart, 'MARKET', 3, Colors.white70),
+              _buildNavItem(Icons.public, provider.getString('nav_world'), 0, Colors.blueAccent),
+              _buildNavItem(Icons.assignment, provider.getString('nav_missions'), 1, Colors.white70),
+              _buildNavItem(Icons.analytics, provider.getString('nav_stats'), 2, Colors.white70),
+              _buildNavItem(Icons.shopping_cart, provider.getString('nav_market'), 3, Colors.white70),
             ],
           ),
         ),

@@ -1,0 +1,260 @@
+class AppStrings {
+  static const Map<String, Map<String, String>> translations = {
+    'en': {
+      // Dashboard
+      'stage': 'STAGE',
+      'active_completed': '(Active / Completed)',
+      'locked': '(Locked)',
+      'locked_zone': 'LOCKED ZONE',
+      'reach_steps': 'Reach @steps Steps',
+      'kinetic_potential': 'KINETIC POTENTIAL:',
+      'steps': 'STEPS',
+      'progress': 'Progress',
+      'next_milestone': 'Next milestone: @steps steps',
+      'keep_walking': 'Keep walking, Captain!',
+      'harvest_energy': 'HARVEST ENERGY',
+      'energy_harvested': 'Energy harvested! +@amount units',
+      
+      // Navigation
+      'nav_world': 'WORLD',
+      'nav_missions': 'MISSIONS',
+      'nav_stats': 'STATS',
+      'nav_market': 'MARKET',
+
+      // Terraforming Console
+      'console_title': 'TERRAFORM CONSOLE',
+      'available_energy': 'AVAILABLE ENERGY:',
+      'units': 'UNITS',
+      'commit_process': 'COMMIT PROCESS',
+      'hydrosphere': 'HYDROSPHERE (Water)',
+      'atmosphere': 'ATMOSPHERE (Air)',
+      'biosphere': 'BIOSPHERE (Flora)',
+      'humanity': 'HUMANITY (Civilization)',
+      'locked_flora': '(Flora - Locked)',
+      'unlocked_flora': '(Flora - Unlocked)',
+      'locked_humanity': '(Civ - Locked)',
+      'increase': '+@percent% Increase',
+      'console_success': 'Terraforming committed! @cost units spent.',
+      'console_error': 'Insufficient energy! Need @cost units.',
+      'balance_warning': 'Total resources cannot exceed 100%!',
+      
+      // Console Help
+      'console_help_title': 'Terraforming Guide',
+      'console_help_desc': 'Use your harvested energy to shape the planet.\n\n1. Move sliders to allocate resources.\n2. Water + Air > 20% unlocks Biosphere.\n3. Biosphere > 30% unlocks Humanity.\n4. Total resources cannot exceed 100%.\n\nBalance is key to evolution.',
+      'got_it': 'GOT IT',
+
+      // Missions
+      'missions_title': 'ACTIVE MISSIONS',
+      'missions_subtitle': 'Complete tasks to earn energy rewards.',
+      'daily_missions': 'DAILY MISSIONS', // Yeni
+      'mission_1_title': 'First Steps',
+      'mission_1_desc': 'Walk 1000 steps in a single session.',
+      'mission_2_title': 'Terraformer',
+      'mission_2_desc': 'Increase Hydrosphere to 10%.',
+      'mission_3_title': 'Atmospheric',
+      'mission_3_desc': 'Reach 20% Atmosphere density.',
+      'mission_4_title': 'Life Bringer',
+      'mission_4_desc': 'Unlock the Biosphere layer.',
+      
+      // Daily Missions (Yeni)
+      'daily_3k_title': 'Daily Walker',
+      'daily_3k_desc': 'Reach 3,000 steps today.',
+      'daily_7k_title': 'Active Explorer',
+      'daily_7k_desc': 'Reach 7,000 steps today.',
+      'daily_10k_title': 'Marathon',
+      'daily_10k_desc': 'Reach 10,000 steps today.',
+      'next_reset': 'Resets at midnight',
+
+      'reward': 'Reward: @amount Units',
+      'claim': 'CLAIM',
+      'claimed': 'CLAIMED',
+      'mission_claimed': 'Mission reward claimed!',
+
+      // Statistics
+      'stats_title': 'STATISTICS',
+      'daily_activity': 'DAILY ACTIVITY',
+      'weekly_progress': 'WEEKLY PROGRESS',
+      'total_steps': 'TOTAL STEPS',
+      'calories': 'CALORIES',
+      'distance': 'DISTANCE',
+      'daily_avg': 'Daily Average: @steps steps',
+      'km': 'km',
+      'kcal': 'kcal',
+      
+      // Market
+      'market_title': 'MARKET',
+      'energy_boosts': 'ENERGY BOOSTS',
+      'planet_customizations': 'PLANET CUSTOMIZATIONS',
+      'select_color': 'SELECT COLOR THEME',
+      'reset_market': 'RESET MARKET',
+      'factory_reset': 'FACTORY RESET',
+      'owned': 'OWNED',
+      'buy': 'BUY',
+      'insufficient_energy': 'Insufficient energy!',
+      'purchased': 'Purchased!',
+      
+      // Dialogs
+      'reset_refund_title': 'Reset & Refund?',
+      'reset_refund_desc': 'Items will be removed and spent energy will be refunded.',
+      'factory_reset_title': 'FACTORY RESET?',
+      'factory_reset_desc': 'WARNING: This will wipe EVERYTHING. Steps, Energy, Planet Progress, Items. Cannot be undone!',
+      'cancel': 'Cancel',
+      'reset': 'Reset',
+      'wipe_all': 'WIPE ALL',
+      'success_reset': 'Market data reset successfully.',
+      'success_factory': 'App reset to factory settings.',
+
+      // Items
+      'item_step_x2': 'Step Multiplier x2',
+      'desc_step_x2': 'Double energy from steps for 24h',
+      'item_bonus_50': 'Energy Bonus +50%',
+      'desc_bonus_50': 'Get 50% more energy from harvest',
+      'item_neon': 'Neon Glow Effect',
+      'desc_neon': 'Enhanced planet glow animation',
+      'item_particles': 'Particle Effects',
+      'desc_particles': 'Add particles around planet',
+      'item_colors': 'Custom Planet Colors',
+      'desc_colors': 'Unlock custom color schemes',
+      
+      // Colors
+      'color_default': 'Default',
+      'color_purple': 'Purple',
+      'color_gold': 'Gold',
+      'color_teal': 'Teal',
+      'color_crimson': 'Crimson',
+      
+      // Gezegen İsimleri
+      'dead_rock': 'DEAD ROCK',
+      'blue_hope': 'BLUE HOPE',
+      'green_eden': 'GREEN EDEN',
+    },
+    'tr': {
+      // Dashboard
+      'stage': 'AŞAMA',
+      'active_completed': '(Aktif / Tamamlandı)',
+      'locked': '(Kilitli)',
+      'locked_zone': 'KİLİTLİ BÖLGE',
+      'reach_steps': '@steps Adıma Ulaş',
+      'kinetic_potential': 'KİNETİK POTANSİYEL:',
+      'steps': 'ADIM',
+      'progress': 'İlerleme',
+      'next_milestone': 'Sonraki hedef: @steps adım',
+      'keep_walking': 'Yürümeye devam et, Kaptan!',
+      'harvest_energy': 'ENERJİ TOPLA',
+      'energy_harvested': 'Enerji toplandı! +@amount birim',
+      
+      // Navigation
+      'nav_world': 'DÜNYA',
+      'nav_missions': 'GÖREVLER',
+      'nav_stats': 'İSTATİSTİK',
+      'nav_market': 'MARKET',
+
+      // Terraforming Console
+      'console_title': 'TERRAFORM KONSOLU',
+      'available_energy': 'MEVCUT ENERJİ:',
+      'units': 'BİRİM',
+      'commit_process': 'İŞLEMİ UYGULA',
+      'hydrosphere': 'HİDROSFER (Su)',
+      'atmosphere': 'ATMOSFER (Hava)',
+      'biosphere': 'BİYOSFER (Bitki)',
+      'humanity': 'İNSANLIK (Medeniyet)',
+      'locked_flora': '(Bitki - Kilitli)',
+      'unlocked_flora': '(Bitki - Açık)',
+      'locked_humanity': '(Medeniyet - Kilitli)',
+      'increase': '+%@percent Artış',
+      'console_success': 'Terraform uygulandı! @cost birim harcandı.',
+      'console_error': 'Yetersiz enerji! @cost birim gerekli.',
+      'balance_warning': 'Toplam kaynak %100\'ü geçemez!',
+      
+      // Console Help
+      'console_help_title': 'Terraform Rehberi',
+      'console_help_desc': 'Topladığın enerjiyi gezegeni şekillendirmek için kullan.\n\n1. Kaynakları dağıtmak için kaydırıcıları kullan.\n2. Su + Hava > %20 olunca Biyosfer açılır.\n3. Biyosfer > %30 olunca İnsanlık açılır.\n4. Toplam kaynak %100\'ü geçemez.\n\nDenge, evrimin anahtarıdır.',
+      'got_it': 'ANLAŞILDI',
+
+      // Missions
+      'missions_title': 'AKTİF GÖREVLER',
+      'missions_subtitle': 'Enerji ödülleri kazanmak için görevleri tamamla.',
+      'daily_missions': 'GÜNLÜK GÖREVLER', // Yeni
+      'mission_1_title': 'İlk Adımlar',
+      'mission_1_desc': 'Tek seferde 1000 adım at.',
+      'mission_2_title': 'Şekillendirici',
+      'mission_2_desc': 'Hidrosfer\'i %10 seviyesine çıkar.',
+      'mission_3_title': 'Atmosferik',
+      'mission_3_desc': 'Atmosfer yoğunluğunu %20 yap.',
+      'mission_4_title': 'Hayat Veren',
+      'mission_4_desc': 'Biyosfer katmanının kilidini aç.',
+      
+      // Daily Missions (Yeni)
+      'daily_3k_title': 'Günlük Yürüyüşçü',
+      'daily_3k_desc': 'Bugün 3.000 adıma ulaş.',
+      'daily_7k_title': 'Aktif Kaşif',
+      'daily_7k_desc': 'Bugün 7.000 adıma ulaş.',
+      'daily_10k_title': 'Maraton',
+      'daily_10k_desc': 'Bugün 10.000 adıma ulaş.',
+      'next_reset': 'Gece yarısı sıfırlanır',
+
+      'reward': 'Ödül: @amount Birim',
+      'claim': 'AL',
+      'claimed': 'ALINDI',
+      'mission_claimed': 'Görev ödülü alındı!',
+
+      // Statistics
+      'stats_title': 'İSTATİSTİKLER',
+      'daily_activity': 'GÜNLÜK AKTİVİTE',
+      'weekly_progress': 'HAFTALIK İLERLEME',
+      'total_steps': 'TOPLAM ADIM',
+      'calories': 'KALORİ',
+      'distance': 'MESAFE',
+      'daily_avg': 'Günlük Ort: @steps adım',
+      'km': 'km',
+      'kcal': 'kcal',
+      
+      // Market
+      'market_title': 'MARKET',
+      'energy_boosts': 'ENERJİ GÜÇLENDİRMELERİ',
+      'planet_customizations': 'GEZEGEN ÖZELLEŞTİRMELERİ',
+      'select_color': 'RENK TEMASI SEÇ',
+      'reset_market': 'MARKETİ SIFIRLA',
+      'factory_reset': 'FABRİKA AYARLARI',
+      'owned': 'SAHİP OLUNAN',
+      'buy': 'SATIN AL',
+      'insufficient_energy': 'Yetersiz enerji!',
+      'purchased': 'Satın alındı!',
+      
+      // Dialogs
+      'reset_refund_title': 'Sıfırla ve İade Et?',
+      'reset_refund_desc': 'Öğeler silinecek ve harcanan enerji iade edilecektir.',
+      'factory_reset_title': 'FABRİKA AYARLARI?',
+      'factory_reset_desc': 'UYARI: Bu işlem HER ŞEYİ silecektir. Adımlar, Enerji, İlerleme, Eşyalar. Geri alınamaz!',
+      'cancel': 'İptal',
+      'reset': 'Sıfırla',
+      'wipe_all': 'HER ŞEYİ SİL',
+      'success_reset': 'Market verileri sıfırlandı.',
+      'success_factory': 'Uygulama fabrika ayarlarına döndü.',
+
+      // Items
+      'item_step_x2': 'Adım Çarpanı x2',
+      'desc_step_x2': '24 saat boyunca adımlardan çift enerji',
+      'item_bonus_50': 'Enerji Bonusu +%50',
+      'desc_bonus_50': 'Toplamadan %50 daha fazla enerji',
+      'item_neon': 'Neon Parlama Efekti',
+      'desc_neon': 'Gelişmiş gezegen parlama animasyonu',
+      'item_particles': 'Parçacık Efektleri',
+      'desc_particles': 'Gezegen etrafına parçacıklar ekler',
+      'item_colors': 'Özel Gezegen Renkleri',
+      'desc_colors': 'Özel renk şemalarının kilidini açar',
+      
+      // Colors
+      'color_default': 'Varsayılan',
+      'color_purple': 'Mor',
+      'color_gold': 'Altın',
+      'color_teal': 'Turkuaz',
+      'color_crimson': 'Kızıl',
+      
+      // Gezegen İsimleri
+      'dead_rock': 'ÖLÜ KAYA',
+      'blue_hope': 'MAVİ UMUT',
+      'green_eden': 'YEŞİL CENNET',
+    },
+  };
+}
