@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:permission_handler/permission_handler.dart'; 
+import 'package:permission_handler/permission_handler.dart';
 import 'providers/motion_core_provider.dart';
 import 'services/sensor_service.dart';
-import 'services/background_service.dart'; // Arkaplan servisi
+import 'services/background_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/splash_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MotionCoreApp());
 }
@@ -47,95 +47,65 @@ class MotionCoreHome extends StatefulWidget {
 
 class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObserver {
   SensorService? _sensorService;
-  bool _isLoading = true; // Splash ekranı için gerekli
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
-    // UI çizildikten hemen sonra sensörleri başlat
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startAppInitialization();
+      _initializeApp();
     });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && _isInitialized) {
       if (mounted) {
-        final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-        provider.initialize();
+        Provider.of<MotionCoreProvider>(context, listen: false).initialize();
       }
     }
   }
 
-  Future<void> _startAppInitialization() async {
-    // Splash ekranının en az 3 saniye görünmesini sağla
-    final minSplashDuration = Future.delayed(const Duration(seconds: 3));
-    
-    // Başlatma işlemlerini yap
-    final initProcess = _initializeSensors();
-    
-    // İkisini de bekle
-    await Future.wait([minSplashDuration, initProcess]);
-    
-    // Bittiğinde Splash'i kaldır
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _initializeSensors() async {
+  Future<void> _initializeApp() async {
     try {
-      await _requestPermissions();
-      
-      try {
-        if (await Permission.notification.isDenied) {
-          await Permission.notification.request();
-        }
-      } catch (_) {}
+      final minSplashDuration = Future.delayed(const Duration(seconds: 3));
+      final servicesInitialized = _initializeServices();
 
-      try {
-        await initializeService();
-      } catch (e) {
-        debugPrint("Bg service error (Ignored): $e");
-      }
-
+      await Future.wait([minSplashDuration, servicesInitialized]);
+    } catch (e, stackTrace) {
+      debugPrint("Error during app initialization: $e\n$stackTrace");
+    } finally {
       if (mounted) {
-        final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-        await provider.initialize();
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    }
+  }
 
+  Future<void> _initializeServices() async {
+    final provider = Provider.of<MotionCoreProvider>(context, listen: false);
+    await provider.initialize();
+
+    await Permission.notification.request();
+    final activityStatus = await Permission.activityRecognition.request();
+
+    if (activityStatus.isGranted) {
+      try {
         _sensorService = SensorService(provider);
-        
-        try {
-          final initialSteps = await _sensorService!.getInitialStepCount().timeout(
-            const Duration(seconds: 2), 
-            onTimeout: () => 0
-          );
-          
-          if (initialSteps > 0) {
-            provider.updateSteps(initialSteps);
-          }
-          await _sensorService!.startListening();
-        } catch (e) {
-          debugPrint('Sensor error (Ignored): $e');
-        }
+        _sensorService!.startListening();
+      } catch (e) {
+        debugPrint("SensorService failed to initialize: $e");
       }
-    } catch (e) {
-      debugPrint("Init error: $e");
     }
-  }
 
-  Future<bool> _requestPermissions() async {
     try {
-      final status = await Permission.activityRecognition.request();
-      return status.isGranted;
+      await initializeService();
     } catch (e) {
-      return false;
+      debugPrint("BackgroundService failed to initialize: $e");
     }
   }
 
@@ -148,11 +118,6 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
-    // _isLoading true ise Splash, false ise Dashboard göster
-    if (_isLoading) {
-      return const SplashScreen(); // child parametresi kaldırıldı
-    }
-    
-    return const DashboardScreen();
+    return _isInitialized ? const DashboardScreen() : const SplashScreen();
   }
 }

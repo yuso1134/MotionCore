@@ -34,14 +34,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     return Scaffold(
       backgroundColor: const Color(0xFF000510),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: RadialGradient(
             center: Alignment.center,
             radius: 1.5,
             colors: [
-              const Color(0xFF1a1a3e),
-              const Color(0xFF0a0a2e),
-              const Color(0xFF000510),
+              Color(0xFF1a1a3e),
+              Color(0xFF0a0a2e),
+              Color(0xFF000510),
             ],
           ),
         ),
@@ -56,8 +56,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: Container(
                   width: random.nextDouble() * 3 + 1,
                   height: random.nextDouble() * 3 + 1,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
+                  decoration: const BoxDecoration(
+                    color: Color.fromRGBO(255, 255, 255, 0.8),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -70,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Icon with animation
-                  Container(
+                  SizedBox(
                     width: 200,
                     height: 200,
                     child: Stack(
@@ -109,20 +109,20 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         Container(
                           width: 200,
                           height: 200,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
                               colors: [
                                 Colors.cyanAccent,
                                 Colors.blueAccent,
-                                const Color(0xFF0040aa),
-                                const Color(0xFF001a3e),
+                                Color(0xFF0040aa),
+                                Color(0xFF001a3e),
                               ],
-                              stops: const [0.0, 0.3, 0.6, 1.0],
+                              stops: [0.0, 0.3, 0.6, 1.0],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.cyanAccent.withOpacity(0.6),
+                                color: Color.fromRGBO(0, 255, 255, 0.6),
                                 blurRadius: 40,
                                 spreadRadius: 10,
                               ),
@@ -173,12 +173,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         Container(
                           width: 80,
                           height: 80,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
                               colors: [
                                 Colors.white,
-                                Colors.cyanAccent.withOpacity(0.5),
+                                Color.fromRGBO(0, 255, 255, 0.5),
                                 Colors.transparent,
                               ],
                             ),
@@ -241,7 +241,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   const SizedBox(height: 60),
                   
                   // Loading indicator
-                  SizedBox(
+                  const SizedBox(
                     width: 40,
                     height: 40,
                     child: CircularProgressIndicator(

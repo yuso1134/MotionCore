@@ -16,7 +16,6 @@ class TerraformingConsoleScreen extends StatefulWidget {
 }
 
 class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
-  // Seçili Hedef Faz (Varsayılan olarak mevcut faz veya Blue Hope)
   PlanetPhase _selectedTargetPhase = PlanetPhase.blueHope;
 
   double _hydrosphereSlider = 0.0;
@@ -24,10 +23,6 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
   double _biosphereSlider = 0.0;
   double _humanitySlider = 0.0;
   
-  // Kilitler (Artık serbest düzenleme olduğu için kilitleri kaldırabiliriz veya mantığa göre tutabiliriz)
-  // Kullanıcı "Ücretsiz düzenleme" istiyorsa kilitler can sıkıcı olabilir. 
-  // Ancak "Dead Rock hariç" dediğiniz için, seçili faza göre kısıtlamalar olabilir.
-  // Blue Hope seçiliyse Humanity kilitli olabilir mesela.
   bool _humanityLocked = true;
 
   @override
@@ -36,21 +31,17 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
     final provider = Provider.of<MotionCoreProvider>(context, listen: false);
     final current = provider.planetState;
     
-    // Başlangıçta mevcut fazı seç (Eğer Dead Rock ise Blue Hope'a zorla)
     _selectedTargetPhase = current.phase == PlanetPhase.deadRock ? PlanetPhase.blueHope : current.phase;
     
     _loadValuesForPhase(_selectedTargetPhase, current);
   }
   
   void _loadValuesForPhase(PlanetPhase phase, PlanetState current) {
-    // Burada, eğer kullanıcı o fazdaysa mevcut değerleri, değilse varsayılan değerleri yükleyebiliriz.
-    // Şimdilik mevcut değerleri yüklüyoruz ve kullanıcı değiştirebiliyor.
-    
     if (phase == PlanetPhase.blueHope) {
         _hydrosphereSlider = current.hydrosphere < 0.1 ? 0.5 : current.hydrosphere;
         _atmosphereSlider = current.atmosphere < 0.1 ? 0.5 : current.atmosphere;
-        _biosphereSlider = current.biosphere; // Blue Hope'da biosfer az olabilir
-        _humanitySlider = 0.0; // Blue Hope'da insanlık yok
+        _biosphereSlider = current.biosphere;
+        _humanitySlider = 0.0;
         _humanityLocked = true;
     } else if (phase == PlanetPhase.greenEden) {
         _hydrosphereSlider = current.hydrosphere < 0.1 ? 0.4 : current.hydrosphere;
@@ -60,7 +51,6 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
         _humanityLocked = false;
     }
     
-    // Toplamı dengele (Görsel bozulmasın)
     _balanceSliders('init');
   }
 
@@ -95,9 +85,6 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
   void _commitProcess() {
     final provider = Provider.of<MotionCoreProvider>(context, listen: false);
     
-    // ÜCRETSİZ İŞLEM - Enerji kontrolü yok
-    
-    // Seçili değerleri kaydet
     provider.commitTerraforming(
       hydrosphere: _hydrosphereSlider,
       atmosphere: _atmosphereSlider,
@@ -109,7 +96,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Planet Updated Successfully!', // Dil desteği eklenebilir
+          'Planet Updated Successfully!',
           style: GoogleFonts.orbitron(fontSize: 12),
         ),
         backgroundColor: Colors.green.withOpacity(0.9),
@@ -164,7 +151,6 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
             builder: (context, provider, child) {
               return Column(
                 children: [
-                  // Üst Header
                   Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: isSmallScreen ? 12.0 : 16.0,
@@ -197,12 +183,10 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                       ],
                     ),
                   ),
-
-                  // GEZEGEN SEÇİCİ (Planet Selector)
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: NeonContainer(
-                      padding: EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(12),
                       glowColor: Colors.purpleAccent,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -212,7 +196,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                             provider.getString('dead_rock'), 
                             Icons.public_off, 
                             Colors.grey,
-                            false // Dead Rock seçilemez
+                            false
                           ),
                           _buildPlanetOption(
                             PlanetPhase.blueHope, 
@@ -232,8 +216,6 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                       ),
                     ),
                   ),
-
-                  // Slider'lar
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
@@ -254,9 +236,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                               });
                             },
                           ),
-
                           SizedBox(height: isSmallScreen ? 12 : 16),
-
                           _buildResourceSlider(
                             context: context,
                             provider: provider,
@@ -272,9 +252,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                               });
                             },
                           ),
-
                           SizedBox(height: isSmallScreen ? 12 : 16),
-
                           _buildResourceSlider(
                             context: context,
                             provider: provider,
@@ -290,10 +268,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                               });
                             },
                           ),
-                          
                           SizedBox(height: isSmallScreen ? 12 : 16),
-
-                          // HUMANITY SLIDER (Kilitli olup olmadığı faza göre değişir)
                           _buildResourceSlider(
                             context: context,
                             provider: provider,
@@ -315,10 +290,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                               }
                             },
                           ),
-
                           SizedBox(height: isSmallScreen ? 24 : 30),
-
-                          // SAVE CHANGES Button
                           NeonContainer(
                             padding: EdgeInsets.zero,
                             glowColor: Colors.blueAccent,
@@ -328,7 +300,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                                 onTap: _commitProcess,
                                 borderRadius: BorderRadius.circular(8),
                                 child: AnimatedButton(
-                                  text: 'SAVE CHANGES', // Dil desteği eklenebilir
+                                  text: 'SAVE CHANGES',
                                   backgroundColor: Colors.blueAccent,
                                   onPressed: _commitProcess,
                                   padding: EdgeInsets.symmetric(
@@ -358,8 +330,6 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
       onTap: isSelectable ? () {
         setState(() {
           _selectedTargetPhase = phase;
-          // Seçilen faza göre değerleri ve kilitleri güncelle
-          // Provider'dan mevcut durumu alıp üzerine yazmak yerine, varsayılan şablonları yükleyelim
           final provider = Provider.of<MotionCoreProvider>(context, listen: false);
           _loadValuesForPhase(phase, provider.planetState);
         });
@@ -370,7 +340,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: EdgeInsets.all(10),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isSelected ? color.withOpacity(0.3) : Colors.transparent,
                 shape: BoxShape.circle,
@@ -382,7 +352,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
               ),
               child: Icon(icon, color: isSelected ? color : Colors.white54, size: 24),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               label,
               style: GoogleFonts.exo2(
@@ -417,33 +387,15 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: locked ? Colors.redAccent : color,
-                size: isSmallScreen ? 18 : 20,
-              ),
+              Icon(icon, color: locked ? Colors.redAccent : color, size: isSmallScreen ? 18 : 20),
               SizedBox(width: isSmallScreen ? 6 : 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.orbitron(
-                        fontSize: isSmallScreen ? 10 : 12,
-                        fontWeight: FontWeight.w600,
-                        color: locked ? Colors.redAccent : Colors.cyanAccent,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
+                    Text(title, style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 10 : 12, fontWeight: FontWeight.w600, color: locked ? Colors.redAccent : Colors.cyanAccent, letterSpacing: 1.2)),
                     if (subtitle != null)
-                      Text(
-                        subtitle,
-                        style: GoogleFonts.exo2(
-                          fontSize: isSmallScreen ? 8 : 9,
-                          color: Colors.white54,
-                        ),
-                      ),
+                      Text(subtitle, style: GoogleFonts.exo2(fontSize: isSmallScreen ? 8 : 9, color: Colors.white54)),
                   ],
                 ),
               ),
@@ -453,14 +405,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                   children: [
                     Icon(Icons.lock, color: Colors.redAccent, size: isSmallScreen ? 14 : 16),
                     const SizedBox(width: 4),
-                    Text(
-                      provider.getString('locked').toUpperCase().replaceAll('(', '').replaceAll(')', ''),
-                      style: GoogleFonts.orbitron(
-                        fontSize: isSmallScreen ? 8 : 10,
-                        color: Colors.redAccent,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text(provider.getString('locked').toUpperCase().replaceAll('(', '').replaceAll(')', ''), style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 8 : 10, color: Colors.redAccent, fontWeight: FontWeight.bold)),
                   ],
                 ),
             ],
@@ -500,26 +445,13 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                 children: [
                   Container(
                     height: isSmallScreen ? 8 : 10,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(5)),
                   ),
                   FractionallySizedBox(
                     widthFactor: value,
                     child: Container(
                       height: isSmallScreen ? 8 : 10,
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        borderRadius: BorderRadius.circular(5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.redAccent.withOpacity(0.5),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
+                      decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(5), boxShadow: [BoxShadow(color: Colors.redAccent.withOpacity(0.5), blurRadius: 8, spreadRadius: 1)]),
                     ),
                   ),
                 ],
@@ -529,14 +461,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${(value * 100).toInt()}%',
-                style: GoogleFonts.orbitron(
-                  fontSize: isSmallScreen ? 14 : 16,
-                  fontWeight: FontWeight.bold,
-                  color: locked ? Colors.redAccent : color,
-                ),
-              ),
+              Text('${(value * 100).toInt()}%', style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 14 : 16, fontWeight: FontWeight.bold, color: locked ? Colors.redAccent : color)),
             ],
           ),
         ],

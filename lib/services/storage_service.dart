@@ -5,15 +5,27 @@ class StorageService {
   static const String _keySteps = 'steps';
   static const String _keyEnergy = 'available_energy';
   static const String _keyTotalHarvested = 'total_harvested';
+  static const String _keyLastSensorReading = 'last_sensor_reading'; // YENİ
   static const String _keyHydrosphere = 'hydrosphere';
   static const String _keyAtmosphere = 'atmosphere';
   static const String _keyBiosphere = 'biosphere';
-  static const String _keyHumanity = 'humanity'; // Yeni anahtar
+  static const String _keyHumanity = 'humanity'; 
   static const String _keyCompletedMissions = 'completed_missions';
   static const String _keyPurchasedItems = 'purchased_items';
   static const String _keyLastDate = 'last_date';
   static const String _keyDailySteps = 'daily_steps';
   static const String _keyLanguage = 'app_language';
+
+  // YENİ FONKSİYONLAR
+  static Future<void> saveLastSensorReading(int count) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyLastSensorReading, count);
+  }
+
+  static Future<int> loadLastSensorReading() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_keyLastSensorReading) ?? 0;
+  }
 
   static Future<String> loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
@@ -45,12 +57,11 @@ class StorageService {
     };
   }
 
-  // Humanity parametresi eklendi
   static Future<void> savePlanetState({
     required double hydrosphere,
     required double atmosphere,
     required double biosphere,
-    double humanity = 0.0, // Varsayılan değer
+    double humanity = 0.0, 
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_keyHydrosphere, hydrosphere);
@@ -59,7 +70,6 @@ class StorageService {
     await prefs.setDouble(_keyHumanity, humanity);
   }
 
-  // Humanity parametresi eklendi
   static Future<Map<String, double>> loadPlanetState() async {
     final prefs = await SharedPreferences.getInstance();
     return {

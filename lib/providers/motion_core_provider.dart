@@ -1,6 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart'; // Color için
+import 'package:flutter/material.dart'; 
 import '../models/planet_state.dart';
 import '../models/energy_units.dart';
 import '../services/storage_service.dart';
@@ -9,11 +8,8 @@ import '../utils/app_strings.dart';
 class MotionCoreProvider with ChangeNotifier {
   PlanetState _planetState = PlanetState();
   EnergyUnits _energyUnits = EnergyUnits();
-  Timer? _saveTimer;
-  int _lastStepCount = 0;
+  int _lastSensorReading = 0;
   bool _isInitialized = false;
-  bool _needsEnergySave = false;
-  bool _needsPlanetSave = false;
   
   Set<String> _completedMissions = {};
   Map<String, dynamic> _purchasedItems = {};
@@ -30,13 +26,8 @@ class MotionCoreProvider with ChangeNotifier {
   
   String _currentLanguage = 'en';
 
-  // GÜNLÜK GÖREVLER DURUMU
-  // Map<MissionID, Status> -> Status: 0 (Not Completed), 1 (Completed), 2 (Claimed)
-  Map<String, int> _dailyMissionsStatus = {
-    'daily_3k': 0,
-    'daily_7k': 0,
-    'daily_10k': 0,
-  };
+  Map<String, int> _dailyMissionsStatus = {'daily_3k': 0, 'daily_7k': 0, 'daily_10k': 0};
+  Map<String, bool> mainMissionsCompletionStatus = {'mission_1': false, 'mission_2': false, 'mission_3': false, 'mission_4': false};
 
   PlanetState get planetState => _planetState;
   EnergyUnits get energyUnits => _energyUnits;
@@ -51,7 +42,6 @@ class MotionCoreProvider with ChangeNotifier {
   String get currentLanguage => _currentLanguage;
   Map<String, int> get dailyMissionsStatus => _dailyMissionsStatus;
 
-  // İDEAL FİYATLAR (10.000 adım Milestone'a göre)
   final Map<String, int> _itemPrices = {
     'step_multiplier_2x': 5000,
     'energy_bonus_50': 3000,
@@ -95,33 +85,20 @@ class MotionCoreProvider with ChangeNotifier {
         totalHarvested: energyData['totalHarvested']!,
       );
       
-      final savedHydro = planetData['hydrosphere']!;
-      final savedAtmos = planetData['atmosphere']!;
-      final savedBio = planetData['biosphere']!;
-      final savedHuman = planetData['humanity'] ?? 0.0; 
+      _planetState = PlanetState(
+        hydrosphere: planetData['hydrosphere']!,
+        atmosphere: planetData['atmosphere']!,
+        biosphere: planetData['biosphere']!,
+        humanity: planetData['humanity'] ?? 0.0,
+      );
       
-      if (savedHydro == 0.0 && savedAtmos == 0.0 && savedBio == 0.0 && savedHuman == 0.0) {
-        _planetState = PlanetState();
-      } else {
-        _planetState = PlanetState(
-          hydrosphere: savedHydro,
-          atmosphere: savedAtmos,
-          biosphere: savedBio,
-          humanity: savedHuman,
-        );
-      }
-      
-      _lastStepCount = _energyUnits.steps;
+      _lastSensorReading = await StorageService.loadLastSensorReading();
       _completedMissions = await StorageService.loadCompletedMissions();
       _purchasedItems = await StorageService.loadPurchasedItems();
-      
-      // Günlük görev durumlarını yükleyebiliriz ama basitlik için günlük resetleniyor varsayıyoruz
-      // İstenirse StorageService'e eklenebilir. Şimdilik hafızada.
-      
       _updateActiveBoosts();
       _lastDate = await StorageService.loadLastDate();
       _dailySteps = await StorageService.loadDailySteps(30);
-      _checkAndUpdateDailySteps(); // Günlük kontrol ve sıfırlama burada
+      _checkAndUpdateDailySteps();
       
       if (_purchasedItems.containsKey('selected_color')) {
         final colorValue = _purchasedItems['selected_color'] as int;
@@ -131,8 +108,7 @@ class MotionCoreProvider with ChangeNotifier {
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
-      print('Error loading saved data: $e');
-      _isInitialized = true;
+      debugPrint('Error loading saved data: $e');
     }
   }
   
@@ -155,7 +131,6 @@ class MotionCoreProvider with ChangeNotifier {
     _isNeonGlowActive = _purchasedItems.containsKey('neon_glow');
     _isParticleEffectsActive = _purchasedItems.containsKey('particle_effects');
     _isCustomColorsActive = _purchasedItems.containsKey('custom_colors');
-    notifyListeners();
   }
   
   Future<void> setCustomPlanetColor(Color? color) async {
@@ -172,11 +147,9 @@ class MotionCoreProvider with ChangeNotifier {
   void _checkAndUpdateDailySteps() {
     final now = DateTime.now();
     final todayKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    
     if (_lastDate != todayKey) {
-      // GÜN DEĞİŞTİ!
       if (_lastDate != null) {
-        final yesterdayStartSteps = _dailySteps[_lastDate!] ?? 0;
+        final yesterdayStartSteps = _dailySteps[_lastDate!] ?? _energyUnits.steps;
         final yesterdayEndSteps = _energyUnits.steps;
         final yesterdayTotalSteps = yesterdayEndSteps - yesterdayStartSteps;
         if (yesterdayTotalSteps > 0) {
@@ -184,71 +157,58 @@ class MotionCoreProvider with ChangeNotifier {
           _dailySteps[_lastDate!] = yesterdayTotalSteps;
         }
       }
-      
-      // Yeni gün için başlangıç değerini ayarla
       _dailySteps[todayKey] = _energyUnits.steps;
       StorageService.saveLastDate(todayKey);
       _lastDate = todayKey;
-      
-      // GÜNLÜK GÖREVLERİ SIFIRLA
-      _dailyMissionsStatus = {
-        'daily_3k': 0,
-        'daily_7k': 0,
-        'daily_10k': 0,
-      };
-      // (Burada completedMissions içinden günlük görevleri silmek gerekmez, çünkü ayrı map kullanıyoruz)
+      _dailyMissionsStatus = {'daily_3k': 0, 'daily_7k': 0, 'daily_10k': 0};
     }
-    
-    // Günlük görevleri kontrol et (Başlangıçta)
-    _checkDailyMissions();
+    _checkAllMissions();
   }
   
-  void _updateTodaySteps() {
+  void _updateTodaySteps({required int newSteps}) {
     final now = DateTime.now();
     final todayKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    
-    final todayStartSteps = _dailySteps[todayKey] ?? _energyUnits.steps;
-    final todayTotalSteps = _energyUnits.steps - todayStartSteps;
-    
-    if (todayTotalSteps > 0) {
-      StorageService.saveDailySteps(todayKey, todayTotalSteps);
-      _dailySteps[todayKey] = todayTotalSteps;
-    }
-    
-    // Günlük görevleri kontrol et (Her adım güncellemesinde)
-    _checkDailyMissions(todayTotalSteps);
+    int currentDailySteps = _dailySteps[todayKey] ?? 0;
+    _dailySteps[todayKey] = currentDailySteps + newSteps;
+    _checkAllMissions();
   }
 
-  void _checkDailyMissions([int? todaySteps]) {
-    if (todaySteps == null) {
-      // Bugünün adımlarını hesapla
-      final now = DateTime.now();
-      final todayKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      final start = _dailySteps[todayKey] ?? _energyUnits.steps;
-      todaySteps = _energyUnits.steps - start;
-    }
+  void _checkAllMissions() {
+    final now = DateTime.now();
+    final todayKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final todayTotalSteps = _dailySteps[todayKey] ?? 0;
 
-    if (todaySteps >= 3000 && _dailyMissionsStatus['daily_3k'] == 0) {
-      _dailyMissionsStatus['daily_3k'] = 1; // Completed
+    if (todayTotalSteps >= 3000 && _dailyMissionsStatus['daily_3k'] == 0) {
+      _dailyMissionsStatus['daily_3k'] = 1;
     }
-    if (todaySteps >= 7000 && _dailyMissionsStatus['daily_7k'] == 0) {
+    if (todayTotalSteps >= 7000 && _dailyMissionsStatus['daily_7k'] == 0) {
       _dailyMissionsStatus['daily_7k'] = 1;
     }
-    if (todaySteps >= 10000 && _dailyMissionsStatus['daily_10k'] == 0) {
+    if (todayTotalSteps >= 10000 && _dailyMissionsStatus['daily_10k'] == 0) {
       _dailyMissionsStatus['daily_10k'] = 1;
     }
-    // notifyListeners() genellikle updateSteps içinde çağrıldığı için burada gerekmez ama 
-    // manuel çağrılar için ekleyebiliriz. Ancak loop olmasın.
+
+    mainMissionsCompletionStatus['mission_1'] = _energyUnits.steps >= 1000;
+    mainMissionsCompletionStatus['mission_2'] = _planetState.hydrosphere >= 0.1;
+    mainMissionsCompletionStatus['mission_3'] = _planetState.atmosphere >= 0.2;
+    mainMissionsCompletionStatus['mission_4'] = _planetState.biosphere > 0;
+  }
+  
+  Future<Map<String, int>> getDailySteps(int days) async {
+    final now = DateTime.now();
+    Map<String, int> result = {};
+    for (int i = 0; i < days; i++) {
+      final date = now.subtract(Duration(days: i));
+      final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      result[dateKey] = _dailySteps[dateKey] ?? 0;
+    }
+    return result;
   }
 
-  // Günlük görev ödülünü al
   Future<bool> claimDailyMissionReward(String missionId, int reward) async {
-    if (_dailyMissionsStatus[missionId] == 1) { // Eğer tamamlandıysa (1)
-      _energyUnits = _energyUnits.copyWith(
-        totalHarvested: _energyUnits.totalHarvested + reward,
-      );
-      _dailyMissionsStatus[missionId] = 2; // Alındı (2) olarak işaretle
-      
+    if (_dailyMissionsStatus[missionId] == 1) {
+      _energyUnits = _energyUnits.copyWith(totalHarvested: _energyUnits.totalHarvested + reward);
+      _dailyMissionsStatus[missionId] = 2;
       _saveEnergyDataImmediate();
       notifyListeners();
       return true;
@@ -256,106 +216,76 @@ class MotionCoreProvider with ChangeNotifier {
     return false;
   }
 
-  void updateSteps(int steps) {
-    if (steps > _lastStepCount) {
-      final newSteps = steps - _lastStepCount;
-      _lastStepCount = steps;
-      final energyGain = (newSteps * _stepMultiplier).toInt();
+  void updateSteps(int rawSensorSteps) async {
+    if (!_isInitialized) return;
+
+    if (_lastSensorReading == 0) {
+      _lastSensorReading = rawSensorSteps;
+      await StorageService.saveLastSensorReading(_lastSensorReading);
+      return; 
+    }
+
+    int newSteps = 0;
+    if (rawSensorSteps < _lastSensorReading) {
+      newSteps = rawSensorSteps;
+    } else {
+      newSteps = rawSensorSteps - _lastSensorReading;
+    }
+
+    if (newSteps > 0) {
       _energyUnits = _energyUnits.copyWith(
-        steps: steps,
-        availableEnergy: _energyUnits.availableEnergy + energyGain,
+        steps: _energyUnits.steps + newSteps,
+        availableEnergy: _energyUnits.availableEnergy + (newSteps * _stepMultiplier).toInt(),
       );
+
+      _updateTodaySteps(newSteps: newSteps);
       _saveEnergyData();
-      _updateTodaySteps(); // Günlük görev kontrolü burada yapılıyor
       notifyListeners();
     }
+
+    _lastSensorReading = rawSensorSteps;
+    await StorageService.saveLastSensorReading(_lastSensorReading);
   }
   
   void _saveEnergyData() {
-    _needsEnergySave = true;
-    _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(seconds: 1), () {
-      if (_needsEnergySave) {
-        StorageService.saveEnergyData(
-          steps: _energyUnits.steps,
-          availableEnergy: _energyUnits.availableEnergy,
-          totalHarvested: _energyUnits.totalHarvested,
-        );
-        _needsEnergySave = false;
-      }
-    });
+    if(!_isInitialized) return;
+    StorageService.saveEnergyData(steps: _energyUnits.steps, availableEnergy: _energyUnits.availableEnergy, totalHarvested: _energyUnits.totalHarvested);
   }
   
   void _savePlanetData() {
-    _needsPlanetSave = true;
-    _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(seconds: 1), () {
-      if (_needsPlanetSave) {
-        StorageService.savePlanetState(
-          hydrosphere: _planetState.hydrosphere,
-          atmosphere: _planetState.atmosphere,
-          biosphere: _planetState.biosphere,
-          humanity: _planetState.humanity, // Humanity eklendi
-        );
-        _needsPlanetSave = false;
-      }
-    });
+    if(!_isInitialized) return;
+    StorageService.savePlanetState(hydrosphere: _planetState.hydrosphere, atmosphere: _planetState.atmosphere, biosphere: _planetState.biosphere, humanity: _planetState.humanity);
   }
   
-  void _saveEnergyDataImmediate() {
-    _saveTimer?.cancel();
-    _needsEnergySave = false;
-    StorageService.saveEnergyData(
-      steps: _energyUnits.steps,
-      availableEnergy: _energyUnits.availableEnergy,
-      totalHarvested: _energyUnits.totalHarvested,
-    );
-  }
-  
-  void _savePlanetDataImmediate() {
-    _saveTimer?.cancel();
-    _needsPlanetSave = false;
-    StorageService.savePlanetState(
-      hydrosphere: _planetState.hydrosphere,
-      atmosphere: _planetState.atmosphere,
-      biosphere: _planetState.biosphere,
-      humanity: _planetState.humanity, // Humanity eklendi
-    );
-  }
+  void _saveEnergyDataImmediate() => _saveEnergyData();
+  void _savePlanetDataImmediate() => _savePlanetData();
 
   void harvestEnergy() {
     if (_energyUnits.availableEnergy > 0) {
       final harvested = (_energyUnits.availableEnergy * _harvestBonus).toInt();
-      _energyUnits = _energyUnits.copyWith(
-        totalHarvested: _energyUnits.totalHarvested + harvested,
-        availableEnergy: 0,
-      );
+      _energyUnits = _energyUnits.copyWith(totalHarvested: _energyUnits.totalHarvested + harvested, availableEnergy: 0);
       _saveEnergyDataImmediate();
       notifyListeners();
     }
   }
   
   Future<bool> claimMissionReward(String missionId, int reward) async {
-    if (_completedMissions.contains(missionId)) {
-      return false;
+    if (mainMissionsCompletionStatus[missionId] == true && !_completedMissions.contains(missionId)) {
+        _energyUnits = _energyUnits.copyWith(totalHarvested: _energyUnits.totalHarvested + reward);
+        _completedMissions.add(missionId);
+        await StorageService.saveCompletedMissions(_completedMissions);
+        _saveEnergyDataImmediate();
+        notifyListeners();
+        return true;
     }
-    _energyUnits = _energyUnits.copyWith(
-      totalHarvested: _energyUnits.totalHarvested + reward,
-    );
-    _completedMissions.add(missionId);
-    await StorageService.saveCompletedMissions(_completedMissions);
-    _saveEnergyDataImmediate();
-    notifyListeners();
-    return true;
+    return false;
   }
   
   Future<bool> purchaseMarketItem(String itemId, int price, {int? durationHours}) async {
     if (_energyUnits.totalHarvested < price) {
       return false;
     }
-    _energyUnits = _energyUnits.copyWith(
-      totalHarvested: _energyUnits.totalHarvested - price,
-    );
+    _energyUnits = _energyUnits.copyWith(totalHarvested: _energyUnits.totalHarvested - price);
     if (durationHours != null) {
       final expiry = DateTime.now().add(Duration(hours: durationHours)).millisecondsSinceEpoch;
       _purchasedItems[itemId] = expiry;
@@ -376,9 +306,7 @@ class MotionCoreProvider with ChangeNotifier {
         totalRefund += _itemPrices[key]!;
       }
     });
-    _energyUnits = _energyUnits.copyWith(
-      totalHarvested: _energyUnits.totalHarvested + totalRefund,
-    );
+    _energyUnits = _energyUnits.copyWith(totalHarvested: _energyUnits.totalHarvested + totalRefund);
     _purchasedItems.clear();
     _customPlanetColor = null;
     await StorageService.savePurchasedItems(_purchasedItems);
@@ -389,15 +317,15 @@ class MotionCoreProvider with ChangeNotifier {
 
   Future<void> factoryReset() async {
     _energyUnits = EnergyUnits(steps: 0, availableEnergy: 0, totalHarvested: 0);
-    _lastStepCount = 0;
-    _planetState = PlanetState(hydrosphere: 0.0, atmosphere: 0.0, biosphere: 0.0, humanity: 0.0);
+    _lastSensorReading = 0;
+    await StorageService.saveLastSensorReading(0);
+    _planetState = PlanetState();
     _purchasedItems.clear();
     _completedMissions.clear();
-    _dailyMissionsStatus = {'daily_3k': 0, 'daily_7k': 0, 'daily_10k': 0}; // Günlük görevleri sıfırla
+    _dailyMissionsStatus = {'daily_3k': 0, 'daily_7k': 0, 'daily_10k': 0};
     _customPlanetColor = null;
     _dailySteps.clear();
     _lastDate = null;
-    
     _saveEnergyDataImmediate();
     _savePlanetDataImmediate();
     await StorageService.savePurchasedItems(_purchasedItems);
@@ -406,106 +334,17 @@ class MotionCoreProvider with ChangeNotifier {
     notifyListeners();
   }
   
-  Future<Map<String, int>> getDailySteps(int days) async {
-    final now = DateTime.now();
-    final Map<String, int> result = {};
-    final storedData = await StorageService.loadDailySteps(days);
-    for (int i = 0; i < days; i++) {
-      final date = now.subtract(Duration(days: i));
-      final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      result[dateKey] = storedData[dateKey] ?? 0;
-    }
-    return result;
-  }
-  
-  Future<Map<String, int>> getWeeklySteps(int weeks) async {
-    final now = DateTime.now();
-    final Map<String, int> result = {};
-    final storedData = await StorageService.loadDailySteps(weeks * 7);
-    for (int i = 0; i < weeks; i++) {
-      final weekStart = now.subtract(Duration(days: i * 7));
-      final weekKey = 'Week ${weeks - i}';
-      int weekTotal = 0;
-      for (int j = 0; j < 7; j++) {
-        final date = weekStart.subtract(Duration(days: j));
-        final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        weekTotal += storedData[dateKey] ?? 0;
-      }
-      result[weekKey] = weekTotal;
-    }
-    return result;
-  }
-
-  void updatePlanetState({
-    double? hydrosphere,
-    double? atmosphere,
-    double? biosphere,
-    double? humanity, // Yeni parametre
-  }) {
-    _planetState = _planetState.copyWith(
-      hydrosphere: hydrosphere,
-      atmosphere: atmosphere,
-      biosphere: biosphere,
-      humanity: humanity,
-    );
-    _savePlanetData();
-    notifyListeners();
-  }
-
   bool commitTerraforming({
     required double hydrosphere,
     required double atmosphere,
     required double biosphere,
-    double? humanity, // Yeni parametre (opsiyonel olabilir, ama konsolda vereceğiz)
+    double? humanity,
   }) {
     final current = _planetState;
-    final hydroDiff = (hydrosphere - current.hydrosphere).abs();
-    final atmosDiff = (atmosphere - current.atmosphere).abs();
-    final bioDiff = (biosphere - current.biosphere).abs();
-    final humanDiff = (humanity != null) ? (humanity - current.humanity).abs() : 0.0;
-    
-    final cost = ((hydroDiff + atmosDiff + bioDiff + humanDiff) * 100).toInt();
-    
-    // Ücretsiz olduğu için enerji kontrolü kaldırıldı (istek üzerine)
-    // if (_energyUnits.totalHarvested < cost) return false;
-
-    // Harcama da yapmıyoruz
-    /*
-    _energyUnits = _energyUnits.copyWith(
-      totalHarvested: _energyUnits.totalHarvested - cost,
-    );
-    _saveEnergyDataImmediate();
-    */
-
-    _planetState = _planetState.copyWith(
-      hydrosphere: hydrosphere,
-      atmosphere: atmosphere,
-      biosphere: biosphere,
-      humanity: humanity ?? current.humanity,
-    );
+    _planetState = _planetState.copyWith(hydrosphere: hydrosphere, atmosphere: atmosphere, biosphere: biosphere, humanity: humanity ?? current.humanity);
     _savePlanetDataImmediate();
+    _checkAllMissions();
     notifyListeners();
     return true;
-  }
-
-  @override
-  void dispose() {
-    _saveTimer?.cancel();
-    if (_needsEnergySave) {
-      StorageService.saveEnergyData(
-        steps: _energyUnits.steps,
-        availableEnergy: _energyUnits.availableEnergy,
-        totalHarvested: _energyUnits.totalHarvested,
-      );
-    }
-    if (_needsPlanetSave) {
-      StorageService.savePlanetState(
-        hydrosphere: _planetState.hydrosphere,
-        atmosphere: _planetState.atmosphere,
-        biosphere: _planetState.biosphere,
-        humanity: _planetState.humanity,
-      );
-    }
-    super.dispose();
   }
 }
