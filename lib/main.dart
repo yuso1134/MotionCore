@@ -48,23 +48,25 @@ class MotionCoreHome extends StatefulWidget {
 
 class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObserver {
   SensorService? _sensorService;
+  StreamSubscription<Map<String, dynamic>?>? _backgroundServiceSubscription;
   bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _listenToBackgroundService();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeApp();
+    });
+  }
 
-
-    FlutterBackgroundService().on('update').listen((data) {
-      if (data != null && data.containsKey('steps') && mounted) {
+  void _listenToBackgroundService() {
+    _backgroundServiceSubscription = FlutterBackgroundService().on('update').listen((data) {
+      if (mounted && data != null && data.containsKey('steps')) {
         final steps = data['steps'] as int;
         Provider.of<MotionCoreProvider>(context, listen: false).updateSteps(steps);
       }
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeApp();
     });
   }
 
@@ -82,7 +84,6 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
     try {
       final minSplashDuration = Future.delayed(const Duration(seconds: 3));
       final servicesInitialized = _initializeServices();
-
       await Future.wait([minSplashDuration, servicesInitialized]);
     } catch (e, stackTrace) {
       debugPrint("Error during app initialization: $e\n$stackTrace");
@@ -98,7 +99,6 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
   Future<void> _initializeServices() async {
     final provider = Provider.of<MotionCoreProvider>(context, listen: false);
     await provider.initialize();
-
     await [Permission.notification, Permission.activityRecognition].request();
 
     if (await Permission.activityRecognition.isGranted) {
@@ -121,6 +121,7 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _sensorService?.stopListening();
+    _backgroundServiceSubscription?.cancel();
     super.dispose();
   }
 

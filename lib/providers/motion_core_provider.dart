@@ -143,7 +143,7 @@ class MotionCoreProvider with ChangeNotifier {
     await StorageService.savePurchasedItems(_purchasedItems);
     notifyListeners();
   }
-  
+
   void _checkAndUpdateDailySteps() {
     final now = DateTime.now();
     final todayKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';

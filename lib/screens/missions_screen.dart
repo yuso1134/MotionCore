@@ -109,7 +109,7 @@ class MissionsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.orbitron(fontSize: 14, fontWeight: FontWeight.bold, color: isClaimed ? Colors.white54 : Colors.white, decoration: isClaimed ? TextDecoration.lineThrough : null)),
+                Text(title, style: GoogleFonts.orbitron(fontSize: 14, fontWeight: FontWeight.bold, color: isClaimed ? Colors.white54 : Colors.white)),
                 const SizedBox(height: 2),
                 Text(description, style: GoogleFonts.exo2(fontSize: 11, color: Colors.white70)),
                 const SizedBox(height: 6),
@@ -166,7 +166,7 @@ class MissionsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.orbitron(fontSize: 16, fontWeight: FontWeight.bold, color: isClaimed ? Colors.white54 : Colors.white, decoration: isClaimed ? TextDecoration.lineThrough : null)),
+                Text(title, style: GoogleFonts.orbitron(fontSize: 16, fontWeight: FontWeight.bold, color: isClaimed ? Colors.white54 : Colors.white)),
                 const SizedBox(height: 4),
                 Text(description, style: GoogleFonts.exo2(fontSize: 12, color: Colors.white70)),
                 const SizedBox(height: 8),

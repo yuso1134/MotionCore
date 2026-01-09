@@ -119,7 +119,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 class WorldView extends StatefulWidget {
   final bool isSelected;
-  const WorldView({super.key, this.isSelected = false});
+  const WorldView({super.key, required this.isSelected});
 
   @override
   State<WorldView> createState() => _WorldViewState();
@@ -128,46 +128,41 @@ class WorldView extends StatefulWidget {
 class _WorldViewState extends State<WorldView> {
   PageController? _pageController;
   int _currentViewIndex = 0;
-  bool _isInitialized = false;
 
   static const int _milestoneStep = 10000;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_isInitialized) {
-      _initializePageController();
-    }
-  }
-  
-  void _initializePageController(){
-      try {
-        final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-        final initialPage = (provider.planetState.stageNumber - 1).clamp(0, 2);
-        
-        _pageController = PageController(initialPage: initialPage, viewportFraction: 0.9);
-        _currentViewIndex = initialPage;
-        _isInitialized = true;
-      } catch (e) {
-        debugPrint("Error initializing PageController: $e");
-      }
+  void initState() {
+    super.initState();
+    final provider = Provider.of<MotionCoreProvider>(context, listen: false);
+    final initialPage = (provider.planetState.stageNumber - 1).clamp(0, 2);
+    
+    _pageController = PageController(initialPage: initialPage, viewportFraction: 0.9);
+    _currentViewIndex = initialPage;
   }
 
   @override
   void didUpdateWidget(covariant WorldView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isSelected && !oldWidget.isSelected) {
-      _jumpToLatestPage();
+      _jumpToLatestPage(animate: true);
     }
   }
 
-  void _jumpToLatestPage() {
+  void _jumpToLatestPage({bool animate = false}) {
     if (mounted && _pageController != null && _pageController!.hasClients) {
       final provider = Provider.of<MotionCoreProvider>(context, listen: false);
       final latestPage = (provider.planetState.stageNumber - 1).clamp(0, 2);
-
       if (_pageController!.page?.round() != latestPage) {
-        _pageController!.animateToPage(latestPage, duration: const Duration(milliseconds: 400), curve: Curves.easeOut,);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _pageController!.hasClients) {
+            if (animate) {
+              _pageController!.animateToPage(latestPage, duration: const Duration(milliseconds: 400), curve: Curves.easeOut);
+            } else {
+              _pageController!.jumpToPage(latestPage);
+            }
+          }
+        });
       }
     }
   }
@@ -179,7 +174,6 @@ class _WorldViewState extends State<WorldView> {
   }
 
   int _calculateProgressPercentage(int steps) {
-    if (_milestoneStep == 0) return 0;
     final progress = (steps % _milestoneStep) / _milestoneStep * 100;
     return progress.toInt().clamp(0, 100);
   }
@@ -221,12 +215,15 @@ class _WorldViewState extends State<WorldView> {
 
     return Consumer<MotionCoreProvider>(
       builder: (context, provider, child) {
+        // Provider her güncellendiğinde, sayfanın doğru olup olmadığını kontrol et
+        _jumpToLatestPage();
+
         final energy = provider.energyUnits;
         final currentPlanetState = provider.planetState;
         final int totalSteps = energy.steps;
         final int actualStageIndex = (currentPlanetState.stageNumber - 1).clamp(0, 2);
 
-        if (!_isInitialized) {
+        if (_pageController == null) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -234,33 +231,29 @@ class _WorldViewState extends State<WorldView> {
           children: [
             Container(
               padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12.0 : 16.0, vertical: isSmallScreen ? 8.0 : 10.0),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(icon: const Icon(Icons.menu, color: Colors.white, size: 28), onPressed: () => Navigator.push(context, SmoothPageRoute(builder: (context) => const TerraformingConsoleScreen()))),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 300),
-                              child: Text('${provider.getString('stage')} ${_currentViewIndex + 1}: ${_getStageName(_currentViewIndex, provider)}', key: ValueKey<int>(_currentViewIndex), style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 12 : 14, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.5), textAlign: TextAlign.center),
-                            ),
-                            const SizedBox(height: 4),
-                            if (!_isStageLocked(_currentViewIndex, totalSteps))
-                              Text(provider.getString('active_completed'), style: GoogleFonts.exo2(fontSize: isSmallScreen ? 10 : 11, color: Colors.greenAccent, letterSpacing: 0.5))
-                            else
-                              Text(provider.getString('locked'), style: GoogleFonts.exo2(fontSize: isSmallScreen ? 10 : 11, color: Colors.redAccent, letterSpacing: 0.5)),
-                          ],
+                  IconButton(icon: const Icon(Icons.menu, color: Colors.white, size: 28), onPressed: () => Navigator.push(context, SmoothPageRoute(builder: (context) => const TerraformingConsoleScreen()))),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: Text('${provider.getString('stage')} ${_currentViewIndex + 1}: ${_getStageName(_currentViewIndex, provider)}', key: ValueKey<int>(_currentViewIndex), style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 12 : 14, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.5), textAlign: TextAlign.center),
                         ),
-                      ),
-                      Container(
-                        width: 40, height: 40,
-                        decoration: BoxDecoration(shape: BoxShape.circle, color: _isStageLocked(_currentViewIndex, totalSteps) ? Colors.grey.shade800 : Colors.blue.shade800, border: Border.all(color: Colors.white.withOpacity(0.3), width: 1)),
-                        child: Center(child: Icon(_isStageLocked(_currentViewIndex, totalSteps) ? Icons.lock : Icons.check, size: 20, color: Colors.white70)),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        if (!_isStageLocked(_currentViewIndex, totalSteps))
+                          Text(provider.getString('active_completed'), style: GoogleFonts.exo2(fontSize: isSmallScreen ? 10 : 11, color: Colors.greenAccent, letterSpacing: 0.5))
+                        else
+                          Text(provider.getString('locked'), style: GoogleFonts.exo2(fontSize: isSmallScreen ? 10 : 11, color: Colors.redAccent, letterSpacing: 0.5)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: _isStageLocked(_currentViewIndex, totalSteps) ? Colors.grey.shade800 : Colors.blue.shade800, border: Border.all(color: Colors.white.withOpacity(0.3), width: 1)),
+                    child: Center(child: Icon(_isStageLocked(_currentViewIndex, totalSteps) ? Icons.lock : Icons.check, size: 20, color: Colors.white70)),
                   ),
                 ],
               ),
@@ -274,7 +267,6 @@ class _WorldViewState extends State<WorldView> {
                 itemBuilder: (context, index) {
                   final bool isLocked = _isStageLocked(index, totalSteps);
                   final displayState = !isLocked && index == actualStageIndex ? currentPlanetState : _getPreviewState(index);
-
                   return AnimatedScale(
                     duration: const Duration(milliseconds: 300),
                     scale: _currentViewIndex == index ? 1.0 : 0.85,
