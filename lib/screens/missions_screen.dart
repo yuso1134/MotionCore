@@ -29,12 +29,14 @@ class MissionsScreen extends StatelessWidget {
                       children: [
                         const Icon(Icons.assignment, color: Colors.cyanAccent, size: 28),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(provider.getString('missions_title'), style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2)),
-                            Text(provider.getString('missions_subtitle'), style: GoogleFonts.exo2(fontSize: 12, color: Colors.white70)),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(provider.getString('missions_title'), style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2)),
+                              Text(provider.getString('missions_subtitle'), style: GoogleFonts.exo2(fontSize: 12, color: Colors.white70)),
+                            ],
+                          ),
                         ),
                       ],
                     ),

@@ -134,8 +134,7 @@ class _WorldViewState extends State<WorldView> {
   @override
   void initState() {
     super.initState();
-    final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-    final initialPage = (provider.planetState.stageNumber - 1).clamp(0, 2);
+    final initialPage = _getHighestUnlockedPageIndex();
     
     _pageController = PageController(initialPage: initialPage, viewportFraction: 0.9);
     _currentViewIndex = initialPage;
@@ -149,10 +148,17 @@ class _WorldViewState extends State<WorldView> {
     }
   }
 
+  int _getHighestUnlockedPageIndex() {
+    final provider = Provider.of<MotionCoreProvider>(context, listen: false);
+    final totalSteps = provider.energyUnits.steps;
+    if (!_isStageLocked(2, totalSteps)) return 2;
+    if (!_isStageLocked(1, totalSteps)) return 1;
+    return 0;
+  }
+
   void _jumpToLatestPage({bool animate = false}) {
     if (mounted && _pageController != null && _pageController!.hasClients) {
-      final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-      final latestPage = (provider.planetState.stageNumber - 1).clamp(0, 2);
+      final latestPage = _getHighestUnlockedPageIndex();
       if (_pageController!.page?.round() != latestPage) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _pageController!.hasClients) {
@@ -215,9 +221,6 @@ class _WorldViewState extends State<WorldView> {
 
     return Consumer<MotionCoreProvider>(
       builder: (context, provider, child) {
-        // Provider her güncellendiğinde, sayfanın doğru olup olmadığını kontrol et
-        _jumpToLatestPage();
-
         final energy = provider.energyUnits;
         final currentPlanetState = provider.planetState;
         final int totalSteps = energy.steps;

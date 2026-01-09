@@ -29,19 +29,33 @@ void main() {
     drawCircle(image, x: centerX.toInt(), y: centerY.toInt(), radius: radius.toInt(), color: color, antialias: true);
   }
   
-  final gradient = Gradient.radial(radius: planetRadius);
-  gradient.add(ColorRgb8(200, 200, 200));
-  gradient.add(ColorRgb8(100, 100, 100));
-  gradient.add(ColorRgb8(50, 50, 50));
-  
-  fillRect(image, x1: 0, y1: 0, x2: width, y2: height, mask: gradient);
+  for (var y = -planetRadius; y < planetRadius; y++) {
+    for (var x = -planetRadius; x < planetRadius; x++) {
+      if (x * x + y * y <= planetRadius * planetRadius) {
+        final distance = math.sqrt(x * x + y * y) / planetRadius;
+        final colorValue = 200 - (distance * 150).toInt();
+        final color = ColorRgb8(colorValue, colorValue, colorValue);
+        drawPixel(image, (centerX + x).toInt(), (centerY + y).toInt(), color);
+      }
+    }
+  }
 
   for (var i = 0; i < 3; i++) {
     final radius = planetRadius - 60 - (i * 40);
-    final ringGradient = Gradient.radial(radius: radius, from: Point(centerX, centerY));
-    ringGradient.add(ColorRgb8(0, 255, 255));
-    ringGradient.add(ColorRgb8(0, 100, 200));
-    fillRect(image, x1: 0, y1: 0, x2: width, y2: height, mask: ringGradient);
+    final ringWidth = 10.0;
+    for (var y = -radius; y < radius; y++) {
+      for (var x = -radius; x < radius; x++) {
+        final distance = math.sqrt(x * x + y * y);
+        if (distance >= radius - ringWidth && distance <= radius) {
+          final t = (distance - (radius - ringWidth)) / ringWidth;
+          final r = (0 * (1 - t) + 0 * t).toInt();
+          final g = (255 * (1 - t) + 100 * t).toInt();
+          final b = (255 * (1 - t) + 200 * t).toInt();
+          final color = ColorRgb8(r, g, b);
+          drawPixel(image, (centerX + x).toInt(), (centerY + y).toInt(), color);
+        }
+      }
+    }
   }
 
   try {
