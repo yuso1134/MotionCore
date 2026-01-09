@@ -93,15 +93,17 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
     );
 
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Planet Updated Successfully!',
-          style: GoogleFonts.orbitron(fontSize: 12),
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Planet Updated Successfully!',
+            style: GoogleFonts.orbitron(fontSize: 12),
+          ),
+          backgroundColor: Colors.green.withOpacity(0.9),
         ),
-        backgroundColor: Colors.green.withOpacity(0.9),
-      ),
-    );
+      );
+    }
   }
 
   void _showHelpDialog(BuildContext context, dynamic provider) {
@@ -191,27 +193,9 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildPlanetOption(
-                            PlanetPhase.deadRock, 
-                            provider.getString('dead_rock'), 
-                            Icons.public_off, 
-                            Colors.grey,
-                            false
-                          ),
-                          _buildPlanetOption(
-                            PlanetPhase.blueHope, 
-                            provider.getString('blue_hope'), 
-                            Icons.public, 
-                            Colors.blueAccent,
-                            true
-                          ),
-                          _buildPlanetOption(
-                            PlanetPhase.greenEden, 
-                            provider.getString('green_eden'), 
-                            Icons.forest, 
-                            Colors.greenAccent,
-                            true
-                          ),
+                          _buildPlanetOption(PlanetPhase.deadRock, provider.getString('dead_rock'), Icons.public_off, Colors.grey, false),
+                          _buildPlanetOption(PlanetPhase.blueHope, provider.getString('blue_hope'), Icons.public, Colors.blueAccent, true),
+                          _buildPlanetOption(PlanetPhase.greenEden, provider.getString('green_eden'), Icons.forest, Colors.greenAccent, true),
                         ],
                       ),
                     ),
@@ -221,75 +205,13 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                       padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
                       child: Column(
                         children: [
-                          _buildResourceSlider(
-                            context: context,
-                            provider: provider,
-                            title: provider.getString('hydrosphere'),
-                            icon: Icons.water_drop,
-                            value: _hydrosphereSlider,
-                            color: Colors.blue,
-                            isSmallScreen: isSmallScreen,
-                            onChanged: (value) {
-                              setState(() {
-                                _hydrosphereSlider = value;
-                                _balanceSliders('hydro');
-                              });
-                            },
-                          ),
+                          _buildResourceSlider(context: context, provider: provider, title: provider.getString('hydrosphere'), icon: Icons.water_drop, value: _hydrosphereSlider, color: Colors.blue, isSmallScreen: isSmallScreen, onChanged: (value) => setState(() { _hydrosphereSlider = value; _balanceSliders('hydro'); })),
                           SizedBox(height: isSmallScreen ? 12 : 16),
-                          _buildResourceSlider(
-                            context: context,
-                            provider: provider,
-                            title: provider.getString('atmosphere'),
-                            icon: Icons.cloud,
-                            value: _atmosphereSlider,
-                            color: Colors.lightBlue,
-                            isSmallScreen: isSmallScreen,
-                            onChanged: (value) {
-                              setState(() {
-                                _atmosphereSlider = value;
-                                _balanceSliders('atmos');
-                              });
-                            },
-                          ),
+                          _buildResourceSlider(context: context, provider: provider, title: provider.getString('atmosphere'), icon: Icons.cloud, value: _atmosphereSlider, color: Colors.lightBlue, isSmallScreen: isSmallScreen, onChanged: (value) => setState(() { _atmosphereSlider = value; _balanceSliders('atmos'); })),
                           SizedBox(height: isSmallScreen ? 12 : 16),
-                          _buildResourceSlider(
-                            context: context,
-                            provider: provider,
-                            title: provider.getString('biosphere'),
-                            icon: Icons.eco,
-                            value: _biosphereSlider,
-                            color: Colors.green,
-                            isSmallScreen: isSmallScreen,
-                            onChanged: (value) {
-                              setState(() {
-                                _biosphereSlider = value;
-                                _balanceSliders('bio');
-                              });
-                            },
-                          ),
+                          _buildResourceSlider(context: context, provider: provider, title: provider.getString('biosphere'), icon: Icons.eco, value: _biosphereSlider, color: Colors.green, isSmallScreen: isSmallScreen, onChanged: (value) => setState(() { _biosphereSlider = value; _balanceSliders('bio'); })),
                           SizedBox(height: isSmallScreen ? 12 : 16),
-                          _buildResourceSlider(
-                            context: context,
-                            provider: provider,
-                            title: provider.getString('humanity'),
-                            subtitle: _humanityLocked 
-                                ? provider.getString('locked_humanity') 
-                                : '(Civilization)',
-                            icon: Icons.apartment,
-                            value: _humanitySlider,
-                            color: Colors.orangeAccent,
-                            locked: _humanityLocked,
-                            isSmallScreen: isSmallScreen,
-                            onChanged: (value) {
-                              if (!_humanityLocked) {
-                                setState(() {
-                                  _humanitySlider = value;
-                                  _balanceSliders('human');
-                                });
-                              }
-                            },
-                          ),
+                          _buildResourceSlider(context: context, provider: provider, title: provider.getString('humanity'), subtitle: _humanityLocked ? provider.getString('locked_humanity') : '(Civilization)', icon: Icons.apartment, value: _humanitySlider, color: Colors.orangeAccent, locked: _humanityLocked, isSmallScreen: isSmallScreen, onChanged: (value) { if (!_humanityLocked) setState(() { _humanitySlider = value; _balanceSliders('human'); }); }),
                           SizedBox(height: isSmallScreen ? 24 : 30),
                           NeonContainer(
                             padding: EdgeInsets.zero,
@@ -303,9 +225,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                                   text: 'SAVE CHANGES',
                                   backgroundColor: Colors.blueAccent,
                                   onPressed: _commitProcess,
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: isSmallScreen ? 16 : 18,
-                                  ),
+                                  padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 16 : 18),
                                 ),
                               ),
                             ),
@@ -327,13 +247,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
     final bool isSelected = _selectedTargetPhase == phase;
     
     return GestureDetector(
-      onTap: isSelectable ? () {
-        setState(() {
-          _selectedTargetPhase = phase;
-          final provider = Provider.of<MotionCoreProvider>(context, listen: false);
-          _loadValuesForPhase(phase, provider.planetState);
-        });
-      } : null,
+      onTap: isSelectable ? () => setState(() { _selectedTargetPhase = phase; final provider = Provider.of<MotionCoreProvider>(context, listen: false); _loadValuesForPhase(phase, provider.planetState); }) : null,
       child: Opacity(
         opacity: isSelectable ? 1.0 : 0.3,
         child: Column(
@@ -344,23 +258,13 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
               decoration: BoxDecoration(
                 color: isSelected ? color.withOpacity(0.3) : Colors.transparent,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? color : Colors.white24,
-                  width: isSelected ? 2 : 1,
-                ),
+                border: Border.all(color: isSelected ? color : Colors.white24, width: isSelected ? 2 : 1),
                 boxShadow: isSelected ? [BoxShadow(color: color.withOpacity(0.5), blurRadius: 10)] : null,
               ),
               child: Icon(icon, color: isSelected ? color : Colors.white54, size: 24),
             ),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.exo2(
-                fontSize: 10,
-                color: isSelected ? Colors.white : Colors.white38,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
+            Text(label, style: GoogleFonts.exo2(fontSize: 10, color: isSelected ? Colors.white : Colors.white38, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
           ],
         ),
       ),
@@ -394,26 +298,17 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title, style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 10 : 12, fontWeight: FontWeight.w600, color: locked ? Colors.redAccent : Colors.cyanAccent, letterSpacing: 1.2)),
-                    if (subtitle != null)
-                      Text(subtitle, style: GoogleFonts.exo2(fontSize: isSmallScreen ? 8 : 9, color: Colors.white54)),
+                    if (subtitle != null) Text(subtitle, style: GoogleFonts.exo2(fontSize: isSmallScreen ? 8 : 9, color: Colors.white54)),
                   ],
                 ),
               ),
-              if (locked)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.lock, color: Colors.redAccent, size: isSmallScreen ? 14 : 16),
-                    const SizedBox(width: 4),
-                    Text(provider.getString('locked').toUpperCase().replaceAll('(', '').replaceAll(')', ''), style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 8 : 10, color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                  ],
-                ),
+              if (locked) Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.lock, color: Colors.redAccent, size: 14), const SizedBox(width: 4), Text(provider.getString('locked').toUpperCase().replaceAll('(', '').replaceAll(')', ''), style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 8 : 10, color: Colors.redAccent, fontWeight: FontWeight.bold))]),
             ],
           ),
           SizedBox(height: isSmallScreen ? 16 : 20),
           if (!locked)
             Padding(
-              padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 12 : 16),
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
               child: SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   activeTrackColor: color,
@@ -424,18 +319,7 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
                   trackHeight: 10,
                   overlayShape: const RoundSliderOverlayShape(overlayRadius: 32),
                 ),
-                child: Slider(
-                  value: value,
-                  onChanged: (newValue) {
-                    HapticFeedback.selectionClick();
-                    onChanged(newValue);
-                  },
-                  onChangeStart: (_) => HapticFeedback.lightImpact(),
-                  onChangeEnd: (_) => HapticFeedback.mediumImpact(),
-                  min: 0.0,
-                  max: 1.0,
-                  divisions: 100, 
-                ),
+                child: Slider(value: value, onChanged: (newValue) { HapticFeedback.selectionClick(); onChanged(newValue); }, onChangeStart: (_) => HapticFeedback.lightImpact(), onChangeEnd: (_) => HapticFeedback.mediumImpact(), min: 0.0, max: 1.0, divisions: 100), 
               ),
             )
           else
@@ -443,16 +327,10 @@ class _TerraformingConsoleScreenState extends State<TerraformingConsoleScreen> {
               padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 12 : 16),
               child: Stack(
                 children: [
-                  Container(
-                    height: isSmallScreen ? 8 : 10,
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(5)),
-                  ),
+                  Container(height: isSmallScreen ? 8 : 10, decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(5))),
                   FractionallySizedBox(
                     widthFactor: value,
-                    child: Container(
-                      height: isSmallScreen ? 8 : 10,
-                      decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(5), boxShadow: [BoxShadow(color: Colors.redAccent.withOpacity(0.5), blurRadius: 8, spreadRadius: 1)]),
-                    ),
+                    child: Container(height: isSmallScreen ? 8 : 10, decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(5), boxShadow: [BoxShadow(color: Colors.redAccent.withOpacity(0.5), blurRadius: 8, spreadRadius: 1)])),
                   ),
                 ],
               ),

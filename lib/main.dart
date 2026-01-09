@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'providers/motion_core_provider.dart';
@@ -54,6 +55,14 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
+    // ARKA PLAN SERVİSİNDEN GELEN ADIMLARI DİNLE
+    FlutterBackgroundService().on('update').listen((data) {
+      if (data != null && data.containsKey('steps') && mounted) {
+        final steps = data['steps'] as int;
+        Provider.of<MotionCoreProvider>(context, listen: false).updateSteps(steps);
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeApp();
     });
@@ -90,10 +99,9 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
     final provider = Provider.of<MotionCoreProvider>(context, listen: false);
     await provider.initialize();
 
-    await Permission.notification.request();
-    final activityStatus = await Permission.activityRecognition.request();
+    await [Permission.notification, Permission.activityRecognition].request();
 
-    if (activityStatus.isGranted) {
+    if (await Permission.activityRecognition.isGranted) {
       try {
         _sensorService = SensorService(provider);
         _sensorService!.startListening();

@@ -27,13 +27,13 @@ class MissionsScreen extends StatelessWidget {
                     padding: EdgeInsets.all(isSmallScreen ? 16.0 : 20.0),
                     child: Row(
                       children: [
-                        Icon(Icons.assignment, color: Colors.cyanAccent, size: isSmallScreen ? 24 : 28),
-                        SizedBox(width: isSmallScreen ? 8 : 12),
+                        const Icon(Icons.assignment, color: Colors.cyanAccent, size: 28),
+                        const SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(provider.getString('missions_title'), style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 18 : 22, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2)),
-                            Text(provider.getString('missions_subtitle'), style: GoogleFonts.exo2(fontSize: isSmallScreen ? 10 : 12, color: Colors.white70)),
+                            Text(provider.getString('missions_title'), style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2)),
+                            Text(provider.getString('missions_subtitle'), style: GoogleFonts.exo2(fontSize: 12, color: Colors.white70)),
                           ],
                         ),
                       ],
@@ -41,33 +41,33 @@ class MissionsScreen extends StatelessWidget {
                   ),
                   Expanded(
                     child: ListView(
-                      padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(provider.getString('daily_missions'), style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 12 : 14, fontWeight: FontWeight.bold, color: Colors.orangeAccent, letterSpacing: 1.5)),
+                              Text(provider.getString('daily_missions'), style: GoogleFonts.orbitron(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orangeAccent, letterSpacing: 1.5)),
                               Text(provider.getString('next_reset'), style: GoogleFonts.exo2(fontSize: 10, color: Colors.white38, fontStyle: FontStyle.italic)),
                             ],
                           ),
                         ),
-                        _buildDailyMissionItem(provider: provider, missionId: 'daily_3k', reward: 500, icon: Icons.directions_walk, isSmallScreen: isSmallScreen),
-                        SizedBox(height: isSmallScreen ? 8 : 12),
-                        _buildDailyMissionItem(provider: provider, missionId: 'daily_7k', reward: 1000, icon: Icons.hiking, isSmallScreen: isSmallScreen),
-                        SizedBox(height: isSmallScreen ? 8 : 12),
-                        _buildDailyMissionItem(provider: provider, missionId: 'daily_10k', reward: 2000, icon: Icons.emoji_events, isSmallScreen: isSmallScreen),
-                        const SizedBox(height: 24),
-                        Text('MAIN MISSIONS', style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 12 : 14, fontWeight: FontWeight.bold, color: Colors.blueAccent, letterSpacing: 1.5)),
+                        _buildDailyMissionItem(provider: provider, missionId: 'daily_3k', reward: 500, icon: Icons.directions_walk),
                         const SizedBox(height: 12),
-                        _buildMissionItem(provider: provider, missionId: 'mission_1', reward: 5000, icon: Icons.flag, isSmallScreen: isSmallScreen),
-                        SizedBox(height: isSmallScreen ? 12 : 16),
-                        _buildMissionItem(provider: provider, missionId: 'mission_2', reward: 10000, icon: Icons.water_drop, isSmallScreen: isSmallScreen),
-                        SizedBox(height: isSmallScreen ? 12 : 16),
-                        _buildMissionItem(provider: provider, missionId: 'mission_3', reward: 15000, icon: Icons.cloud, isSmallScreen: isSmallScreen),
-                        SizedBox(height: isSmallScreen ? 12 : 16),
-                        _buildMissionItem(provider: provider, missionId: 'mission_4', reward: 20000, icon: Icons.eco, isSmallScreen: isSmallScreen),
+                        _buildDailyMissionItem(provider: provider, missionId: 'daily_7k', reward: 1000, icon: Icons.hiking),
+                        const SizedBox(height: 12),
+                        _buildDailyMissionItem(provider: provider, missionId: 'daily_10k', reward: 2000, icon: Icons.emoji_events),
+                        const SizedBox(height: 24),
+                        Text('MAIN MISSIONS', style: GoogleFonts.orbitron(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blueAccent, letterSpacing: 1.5)),
+                        const SizedBox(height: 12),
+                        _buildMissionItem(provider: provider, missionId: 'mission_1', reward: 5000, icon: Icons.flag),
+                        const SizedBox(height: 16),
+                        _buildMissionItem(provider: provider, missionId: 'mission_2', reward: 10000, icon: Icons.water_drop),
+                        const SizedBox(height: 16),
+                        _buildMissionItem(provider: provider, missionId: 'mission_3', reward: 15000, icon: Icons.cloud),
+                        const SizedBox(height: 16),
+                        _buildMissionItem(provider: provider, missionId: 'mission_4', reward: 20000, icon: Icons.eco),
                         const SizedBox(height: 40),
                       ],
                     ),
@@ -86,41 +86,38 @@ class MissionsScreen extends StatelessWidget {
     required String missionId,
     required int reward,
     required IconData icon,
-    required bool isSmallScreen,
   }) {
     final status = provider.dailyMissionsStatus[missionId] ?? 0;
     final title = provider.getString('${missionId}_title');
     final description = provider.getString('${missionId}_desc');
-    
     bool isCompleted = status == 1;
     bool isClaimed = status == 2;
-    
     Color statusColor = isClaimed ? Colors.grey : (isCompleted ? Colors.orangeAccent : Colors.white24);
         
     return NeonContainer(
-      padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+      padding: const EdgeInsets.all(12),
       glowColor: isCompleted ? Colors.orangeAccent : Colors.transparent,
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: statusColor.withOpacity(0.5))),
-            child: Icon(icon, color: statusColor, size: isSmallScreen ? 20 : 24),
+            child: Icon(icon, color: statusColor, size: 24),
           ),
-          SizedBox(width: isSmallScreen ? 10 : 14),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 12 : 14, fontWeight: FontWeight.bold, color: isClaimed ? Colors.white54 : Colors.white, decoration: isClaimed ? TextDecoration.lineThrough : null)),
+                Text(title, style: GoogleFonts.orbitron(fontSize: 14, fontWeight: FontWeight.bold, color: isClaimed ? Colors.white54 : Colors.white, decoration: isClaimed ? TextDecoration.lineThrough : null)),
                 const SizedBox(height: 2),
-                Text(description, style: GoogleFonts.exo2(fontSize: isSmallScreen ? 10 : 11, color: Colors.white70)),
+                Text(description, style: GoogleFonts.exo2(fontSize: 11, color: Colors.white70)),
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     const Icon(Icons.bolt, size: 12, color: Colors.amber),
                     const SizedBox(width: 4),
-                    Text(provider.getString('reward', params: {'amount': Formatters.formatNumberWithCommas(reward)}), style: GoogleFonts.exo2(fontSize: isSmallScreen ? 9 : 10, color: Colors.amber, fontWeight: FontWeight.bold)),
+                    Text(provider.getString('reward', params: {'amount': Formatters.formatNumberWithCommas(reward)}), style: GoogleFonts.exo2(fontSize: 10, color: Colors.amber, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ],
@@ -128,13 +125,10 @@ class MissionsScreen extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           if (isCompleted)
-            SizedBox(
-              height: 32,
-              child: ElevatedButton(
-                onPressed: () async => await provider.claimDailyMissionReward(missionId, reward),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12), textStyle: GoogleFonts.orbitron(fontSize: 10, fontWeight: FontWeight.bold)),
-                child: Text(provider.getString('claim')),
-              ),
+            ElevatedButton(
+              onPressed: () async => await provider.claimDailyMissionReward(missionId, reward),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12), textStyle: GoogleFonts.orbitron(fontSize: 10, fontWeight: FontWeight.bold)),
+              child: Text(provider.getString('claim')),
             )
           else if (isClaimed)
             const Icon(Icons.check_circle, color: Colors.grey, size: 24)
@@ -150,39 +144,37 @@ class MissionsScreen extends StatelessWidget {
     required String missionId,
     required int reward,
     required IconData icon,
-    required bool isSmallScreen,
   }) {
     final title = provider.getString('${missionId}_title');
     final description = provider.getString('${missionId}_desc');
-    
     final isCompleted = provider.mainMissionsCompletionStatus[missionId] ?? false;
     final isClaimed = provider.completedMissions.contains(missionId);
     Color statusColor = isClaimed ? Colors.grey : (isCompleted ? Colors.greenAccent : Colors.white24);
         
     return NeonContainer(
-      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      padding: const EdgeInsets.all(16),
       glowColor: isCompleted && !isClaimed ? Colors.greenAccent : Colors.transparent,
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: statusColor.withOpacity(0.5))),
-            child: Icon(icon, color: statusColor, size: isSmallScreen ? 24 : 30),
+            child: Icon(icon, color: statusColor, size: 30),
           ),
-          SizedBox(width: isSmallScreen ? 12 : 16),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 14 : 16, fontWeight: FontWeight.bold, color: isClaimed ? Colors.white54 : Colors.white, decoration: isClaimed ? TextDecoration.lineThrough : null)),
+                Text(title, style: GoogleFonts.orbitron(fontSize: 16, fontWeight: FontWeight.bold, color: isClaimed ? Colors.white54 : Colors.white, decoration: isClaimed ? TextDecoration.lineThrough : null)),
                 const SizedBox(height: 4),
-                Text(description, style: GoogleFonts.exo2(fontSize: isSmallScreen ? 11 : 12, color: Colors.white70)),
+                Text(description, style: GoogleFonts.exo2(fontSize: 12, color: Colors.white70)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     const Icon(Icons.bolt, size: 14, color: Colors.amber),
                     const SizedBox(width: 4),
-                    Text(provider.getString('reward', params: {'amount': Formatters.formatNumberWithCommas(reward)}), style: GoogleFonts.exo2(fontSize: isSmallScreen ? 10 : 12, color: Colors.amber, fontWeight: FontWeight.bold)),
+                    Text(provider.getString('reward', params: {'amount': Formatters.formatNumberWithCommas(reward)}), style: GoogleFonts.exo2(fontSize: 12, color: Colors.amber, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ],
@@ -194,14 +186,16 @@ class MissionsScreen extends StatelessWidget {
               text: provider.getString('claim'),
               onPressed: () async => await provider.claimMissionReward(missionId, reward),
               backgroundColor: Colors.green,
-              padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16, vertical: isSmallScreen ? 8 : 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             )
           else if (isClaimed)
             Container(
-              padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16, vertical: isSmallScreen ? 8 : 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(color: Colors.grey.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-              child: Text(provider.getString('claimed'), style: GoogleFonts.orbitron(fontSize: isSmallScreen ? 10 : 12, color: Colors.white54, fontWeight: FontWeight.bold)),
-            ),
+              child: Text(provider.getString('claimed'), style: GoogleFonts.orbitron(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.bold)),
+            )
+          else
+            const Icon(Icons.hourglass_empty_rounded, color: Colors.white12, size: 24),
         ],
       ),
     );
