@@ -55,7 +55,7 @@ class _MotionCoreHomeState extends State<MotionCoreHome> with WidgetsBindingObse
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // ARKA PLAN SERVİSİNDEN GELEN ADIMLARI DİNLE
+
     FlutterBackgroundService().on('update').listen((data) {
       if (data != null && data.containsKey('steps') && mounted) {
         final steps = data['steps'] as int;
